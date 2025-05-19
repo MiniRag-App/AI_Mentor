@@ -30,3 +30,11 @@ $ pip install -r requirments.txt
 $ cp .env.example .env
 ```
 set your enviroment variables in the .env file like GROQ_API_KEY value
+
+#### Run the fastapi server
+```bash
+$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+```
+
+### Postman Collection
+Download the postman collection from [/assests/Min_rag.postman_collection.josn](/assests/Min_rag.postman_collection.josn)
