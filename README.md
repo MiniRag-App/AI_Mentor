@@ -21,3 +21,12 @@ $ conda activate min-rag-app
 export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
 ```
 
+### Install required pakages
+```bash
+$ pip install -r requirments.txt
+```
+### Setup enviroment variables
+```bash
+$ cp .env.example .env
+```
+set your enviroment variables in the .env file like GROQ_API_KEY value
