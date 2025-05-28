@@ -2,4 +2,6 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.2
 python-multipart==0.0.20
 python-dotenv==1.1.0
+pydantic-settings==2.9.1
+aiofiles==24.1.0 # for handling local disk files in asyncio applications
 
