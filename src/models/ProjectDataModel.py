@@ -12,7 +12,7 @@ class ProjectDataModel(BaseDataModel):
       async def create_project (self,project:Project):
             
             # insert new project into project collection 
-            result =await self.collection.insert_one(project.model_dump())
+            result =await self.collection.insert_one(project.model_dump(exclude_unset=True,by_alias=True))
             project._id =result.inserted_id
 
             return project
@@ -29,3 +29,30 @@ class ProjectDataModel(BaseDataModel):
                   # create new projct 
                   project =Project(project_id=project_id)
                   project =await self.create_project(project =project)
+
+                  return project
+            
+            # convert dict into pydantic model
+            return Project(**record)
+      
+      async def get_all_projects(self,page:int=1,page_size:int=10):
+            
+            # count total number of documents(records)
+            total_documents =await self.collection.count_documents({})
+
+            total_pages = total_documents // page_size
+            if total_pages % page_size >0:
+                  total_pages +=1
+
+            
+            cursor =self.collection.find().skip(page-1 *page_size).limit(page_size)
+
+            projects=[]
+            async for document in cursor:
+                  projects.append(
+                        Project(**document)
+                  )
+            
+            return projects,total_pages
+            
+      

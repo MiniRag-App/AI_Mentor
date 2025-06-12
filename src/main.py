@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     # when app startup
-    app.mongo_connection = AsyncIOMotorClient(settings.MONGODB_URI)
+    app.mongo_connection = AsyncIOMotorClient(settings.MONGODB_URL)
     app.db_client = app.mongo_connection[settings.MONGODB_DATABASE]
     yield
     # when app shutdown

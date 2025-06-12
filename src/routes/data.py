@@ -1,11 +1,13 @@
-from fastapi import APIRouter,UploadFile,status
-from helpers.config import Settings
+from fastapi import APIRouter,UploadFile,status,Request
+from helpers.config import Settings,get_settings
 from fastapi.responses import JSONResponse
 from controllers import DataController,ProjectController,ProcessController
-from models import ResponseSignals
+from models import ResponseSignals,ProjectDataModel,ChunkDataModel
 import os
 import aiofiles
 import logging
+from models import DataChunk,ProjectDataModel  # schemes
+
 
 from .schemes import ProcessRequest
 
@@ -15,10 +17,20 @@ data_router =APIRouter(
     prefix="/api/v1/data",
     tags=['api_v1','data']
 )
-app_settings =Settings()
+app_settings =get_settings()
 
 @data_router.post('/upload/{project_id}')
-async def upload_data(project_id:str,file:UploadFile):
+async def upload_data(request:Request,project_id:str,file:UploadFile):
+       # store project_id in mongodb
+       project_model =ProjectDataModel(
+              db_client =request.app.db_client
+       )
+
+       # store or get prject 
+
+       project =await project_model.get_project_or_create_one(
+              project_id=project_id
+       )
 
        obj_data_controller =DataController()
        # validate the file properities
@@ -62,10 +74,14 @@ async def upload_data(project_id:str,file:UploadFile):
 
 
 @data_router.post('/process/{project_id}')
-async def process_endpoint(project_id:str,process_request:ProcessRequest):
+async def process_endpoint(request:Request,project_id:str,process_request:ProcessRequest):
        file_id =process_request.file_id
        chunk_size =process_request.chunk_size
        overlap =process_request.overlap
+       do_reset =process_request.do_reset
+
+      
+
 
        process_controller =ProcessController(project_id =project_id)
        
@@ -85,5 +101,46 @@ async def process_endpoint(project_id:str,process_request:ProcessRequest):
                  
                      )
        
-       return file_chunks
+       # store file chunks in mongodb
+        
+       project_model =ProjectDataModel(
+              db_client=request.app.db_client
+       )
+       project =await project_model.get_project_or_create_one(project_id=project_id)
+       
+       chunk_model =ChunkDataModel(
+              db_client=request.app.db_client
+       )
+
+       
+       file_chunks_reco =[
+              DataChunk(
+               chunk_text=chunk.page_content,
+               chunk_order=i+1,
+               chunk_metadata=chunk.metadata,
+               chunk_project_id =project.id
+              )
+              for i,chunk in enumerate(file_chunks)
+       ]
+
+      # delete chunks from database 
+       if do_reset ==1:
+           _ = await chunk_model.delete_chunk_by_project_id(
+                  project_id =project.id
+              )
+
+
+       no_chunks =await chunk_model.insert_many_chunks(
+              chunks=file_chunks_reco,
+       )
+
+
+
+
+       return JSONResponse(
+              content={
+                     'signal':ResponseSignals.FILE_PROCESSING_SUCESS.value,
+                     'inserted_chunks':no_chunks
+              }
+       )
 
