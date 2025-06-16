@@ -22,7 +22,7 @@ app_settings =get_settings()
 @data_router.post('/upload/{project_id}')
 async def upload_data(request:Request,project_id:str,file:UploadFile):
        # store project_id in mongodb
-       project_model =ProjectDataModel(
+       project_model =await ProjectDataModel.create_instance(
               db_client =request.app.db_client
        )
 
@@ -103,12 +103,12 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
        
        # store file chunks in mongodb
         
-       project_model =ProjectDataModel(
+       project_model =await ProjectDataModel.create_instance(
               db_client=request.app.db_client
        )
        project =await project_model.get_project_or_create_one(project_id=project_id)
        
-       chunk_model =ChunkDataModel(
+       chunk_model =await ChunkDataModel.create_instance(
               db_client=request.app.db_client
        )
 

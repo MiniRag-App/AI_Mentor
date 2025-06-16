@@ -13,3 +13,17 @@ class DataChunk(BaseModel):
 
     class Config:
         arbitrary_types_allowed=True
+
+    
+    # create index for chunk_project id
+    @classmethod
+    def get_chunk_indexs(cls):
+          return [
+               {
+               'key':[
+                    ('chunk_project_id',1) # 1 ,index ascending order
+               ],
+               'name':'chunk_project_id_1',
+               'unique':False
+               },
+          ]

@@ -14,3 +14,17 @@ class Project(BaseModel):
     
     class Config:
          arbitrary_types_allowed=True
+
+   
+    # create index for project id in mongodb
+    @classmethod
+    def get_indexs(cls):
+          return [
+          {
+               'key':[
+                    ('project_id',1) # 1 ,index ascending order
+               ],
+               'name':'project_id_index_1',
+               'unique':True
+               },
+          ]
