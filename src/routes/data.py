@@ -3,10 +3,12 @@ from helpers.config import Settings,get_settings
 from fastapi.responses import JSONResponse
 from controllers import DataController,ProjectController,ProcessController
 from models import ResponseSignals,ProjectDataModel,ChunkDataModel
+from models import AssetTypeEnum
 import os
 import aiofiles
 import logging
-from models import DataChunk,ProjectDataModel  # schemes
+from models import DataChunk,ProjectDataModel,AssetModel ,Assets
+from datetime import datetime
 
 
 from .schemes import ProcessRequest
@@ -64,11 +66,25 @@ async def upload_data(request:Request,project_id:str,file:UploadFile):
                             'signal':ResponseSignals.FILE_UPLOADED_FAIL.value
                      }
               )
+ 
+
+       # store file_id in asset collection in mongodb
+       asset_model =await AssetModel.create_instance(
+              db_client=request.app.db_client
+              )
+       
+       asset =Assets(
+              asset_project_id =project.id,
+              asset_type=AssetTypeEnum.ASSET_TYPE.value,
+              asset_name =file_id,
+              asset_size =os.path.getsize(file_path)
+       )
+       asset_record =await asset_model.create_asset(asset=asset)
 
        return JSONResponse(
                      content={
                             'singal':ResponseSignals.FILE_UPLOADED_SUCCESS.value,
-                            'file_id':file_id
+                            'file_id':str(asset_record.id)
                      }     )
   
 
