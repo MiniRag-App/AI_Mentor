@@ -2,9 +2,13 @@ from .BaseController import BaseController
 from .ProjectController import ProjectController
 import os 
 from models import ProcessingEnum
+import logging
 
 from langchain_community.document_loaders import PyMuPDFLoader,TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+
+logger =logging.getLogger('uvicorn.error')
 
 class ProcessController(BaseController):
     def __init__(self,project_id:str):
@@ -25,6 +29,12 @@ class ProcessController(BaseController):
             self.project_path,
             file_id
         )
+        
+        # check if file exists or not 
+        if not os.path.exists(file_path):
+            return None
+        
+
         if file_ext ==ProcessingEnum.TXT.value:
             return TextLoader(file_path=file_path,encoding='utf-8')
         
@@ -35,12 +45,12 @@ class ProcessController(BaseController):
     
     def get_file_content(self,file_id:str):
         loader =self.get_file_loader(file_id=file_id)
-
-        docs =loader.load()
-        return docs
+        if loader:
+            docs =loader.load()
+            return docs
+        return None
     
-    def get_file_chunks(self,file_id:str,chunk_size=100,overlap_size=20):
-        file_content =self.get_file_content(file_id=file_id)
+    def get_file_chunks(self,file_content,chunk_size=100,overlap_size=20):
         spliter =RecursiveCharacterTextSplitter(
               chunk_size=chunk_size,
               chunk_overlap=overlap_size,

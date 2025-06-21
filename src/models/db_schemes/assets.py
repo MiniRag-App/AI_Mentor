@@ -6,11 +6,11 @@ from datetime import datetime
 
 class Assets(BaseModel):
     id:Optional[ObjectId]=Field(None,alias='_id')
-    asset_project_id =ObjectId
+    asset_project_id :ObjectId=Field(...,)
     asset_type:str =Field(...,min_length=1)
     asset_name:str =Field(...,min_length=1)
     asset_size:int =Field(gt=0,default=None)
-    asset_pushed_at:datetime =Field(default=datetime.utcnnow)
+    asset_pushed_at:datetime =Field(default=datetime.now)
     asset_config:dict =Field(default=None)
 
 
@@ -20,7 +20,7 @@ class Assets(BaseModel):
 
     # create index for asset_project_id and asset_project_name
     @classmethod
-    def get_chunk_indexs(cls):
+    def get_asset_indexs(cls):
           return [
                {
                'key':[
