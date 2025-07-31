@@ -5,3 +5,9 @@ class LLMEnum(Enum):
     COHER='COHER'
     GROQ='GROQ'
     OPENROUTER='OPENROUTER'
+
+
+class GroqEnum(Enum):
+    SYSTEM ='system'
+    USER ='user'
+    ASSISTANT ='assistant'
