@@ -4,13 +4,12 @@ from groq import Groq
 import logging
 
 class GroqProvider(LLMInterface):
-    def __init__(self, api_key:str , api_url:str=None,
+    def __init__(self, api_key:str,
                  default_input_max_characters:int = 1000,
                  default_generation_max_output_tokens:int =1000,
                  default_generation_temprature: float= 0.1):
               
         self.api_key=api_key
-        self.api_url=api_url
         self.default_input_max_characters=default_input_max_characters
         self.default_generation_max_output_tokens=default_generation_max_output_tokens
         self.default_generation_temprature=default_generation_temprature
@@ -20,8 +19,7 @@ class GroqProvider(LLMInterface):
         self.embedding_size=None
 
         self.client=Groq(
-            api_key=self.api_key,
-            api_url=self.api_url
+            api_key=self.api_key
         )
 
         self.logger=logging.getLogger(__name__)
@@ -54,10 +52,9 @@ class GroqProvider(LLMInterface):
 
         response =self.client.chat.completions.create(
             model =self.generation_mdoel_id,
-            messages=chat_history
+            messages=chat_history,
             temperature=temprature,
             max_tokens=max_output_tokens
-
         )
 
         # validate response 

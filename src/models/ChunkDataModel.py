@@ -1,8 +1,11 @@
 from .BaseDataModel import BaseDataModel
-from .db_schemes import DataChunk
+from .db_schemes import DataChunk,Project
 from .enumrations import DataBaseEnum
 from pymongo import InsertOne # type of operation
 from bson.objectid import ObjectId
+from fastapi.responses import JSONResponse
+from fastapi import status
+from models import ResponseSignals
 
 
 class ChunkDataModel(BaseDataModel):
@@ -60,7 +63,7 @@ class ChunkDataModel(BaseDataModel):
             batch =chunks[i:i+batch_size]
 
             operations=[
-                InsertOne(chunk.model_dump())
+                InsertOne(chunk.model_dump(exclude_unset=True, by_alias=True))
                 for chunk in batch
             ]
             
@@ -74,5 +77,20 @@ class ChunkDataModel(BaseDataModel):
         })
 
         return result.deleted_count
+    
+
+    async def get_project_chunks(self,project_id: ObjectId, page_no :int=1 ,page_size:int =100):
+
+        records =await self.collection.find({
+                    'chunk_project_id':project_id
+                }).skip(
+                    (page_no -1 ) * page_size
+                ).limit(page_size).to_list(length=None)
+        
+
+        return [ 
+            DataChunk(**rec)
+            for rec in records
+        ]
 
 
