@@ -6,12 +6,13 @@ import time
 import json
 
 class NLPController(BaseController):
-    def __init__(self,generation_client, embedding_client, vectordb_client):
+    def __init__(self,generation_client, embedding_client, vectordb_client,template_parser):
         super().__init__()
 
         self.generation_client =generation_client
         self.embedding_client =embedding_client
         self.vectordb_client =vectordb_client
+        self.template_parser =template_parser
 
 
     def create_collection_name(self ,project_id:str):
@@ -93,6 +94,58 @@ class NLPController(BaseController):
             return False 
     
        
-        return  json.loads(
-            json.dumps(result,default=lambda x:x.__dict__)
-        ) 
+        # return  json.loads(
+        #     json.dumps(result,default=lambda x:x.__dict__)
+        # ) 
+        
+        return result
+    
+
+    def answer_rag_question(self,project:Project ,query:str ,limit:int=10):
+
+        print("[DEBUG] Step 1: Retrieving relevant documents...")
+        retrieved_documents = self.search_vectordb_collection(project=project, text=query, limit=limit)
+        print(f"[DEBUG] Retrieved {len(retrieved_documents) if retrieved_documents else 0} documents.")
+
+        if not retrieved_documents or len(retrieved_documents) == 0:
+            print("[DEBUG] No documents retrieved. Returning None.")
+            return None
+
+        print("[DEBUG] Step 2: Constructing system prompt...")
+        system_prompt = self.template_parser.get_prompt_value(group='rag', key='system_prompt')
+
+        print("[DEBUG] Step 3: Constructing document prompts...")
+        document_prompts = "\n".join([
+            self.template_parser.get_prompt_value(
+                group='rag',
+                key='Document_prompt',
+                vars={
+                    "doc_num": idx,
+                    "chunk_text": doc.text
+                })
+            for idx, doc in enumerate(retrieved_documents)
+        ])
+
+        print("[DEBUG] Step 4: Constructing footer prompt...")
+
+
+        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt')
+
+        print("[DEBUG] Step 5: Constructing chat history...")
+        chat_histoy = [
+            self.generation_client.consturct_prompt(
+                prompt=system_prompt,
+                role=self.generation_client.enums.SYSTEM.value
+            )
+        ]
+
+        print("[DEBUG] Step 6: Constructing full prompt...")
+        full_prompt = '\n\n'.join([document_prompts, footer_prompt])
+
+        print("[DEBUG] Step 7: Calling LLM generate_text...")
+        answer = self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_histoy)
+        print("[DEBUG] Step 8: LLM response received.")
+
+        return answer, full_prompt, chat_histoy
+
+

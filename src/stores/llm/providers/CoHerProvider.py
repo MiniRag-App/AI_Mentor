@@ -27,6 +27,8 @@ class CoHerProvider(LLMInterface):
 
         self.logger =logging.getLogger(__name__)
 
+        self.enums=CoherEnum
+
     def set_generation_model(self, model_id:str): # make you able to change model name during run time 
         self.generation_mdoel_id =model_id
 

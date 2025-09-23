@@ -24,6 +24,8 @@ class GroqProvider(LLMInterface):
 
         self.logger=logging.getLogger(__name__)
 
+        self.enums=GroqEnum
+
 
     def set_generation_model(self, model_id:str): # make you able to change model name during run time 
         self.generation_mdoel_id =model_id
@@ -46,24 +48,24 @@ class GroqProvider(LLMInterface):
         temprature =temprature if temprature else self.default_generation_temprature
 
 
+
         chat_history.append(
-            self.consturct_prompt(prompt,role=GroqEnum.USER.value)
+            self.consturct_prompt(prompt, role=GroqEnum.USER.value)
         )
 
-        response =self.client.chat.completions.create(
-            model =self.generation_mdoel_id,
+        response = self.client.chat.completions.create(
+            model=self.generation_mdoel_id,
             messages=chat_history,
             temperature=temprature,
             max_tokens=max_output_tokens
         )
 
-        # validate response 
-        if not response or not response.choices or len(response.choices ==0) or not response.choices[0].message:
+        # validate response
+        if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
             self.logger.error('error while generating text from groq')
             return None
-        
 
-        return response.choices[0].message['content']
+        return response.choices[0].message.content
 
 
     # process any prompt before passing it to any model

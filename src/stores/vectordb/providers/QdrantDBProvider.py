@@ -1,6 +1,7 @@
 from qdrant_client import models, QdrantClient
 from ..VectorDBInterface import VecotrDBInterface
 from ..VectorDBEnum import DistanceMethodEnum
+from models import RetrivedDocuments
 import logging
 from typing import List
 import time
@@ -163,11 +164,13 @@ class QdrantDBProvider(VecotrDBInterface):
         if not results or len(results) == 0:
             return None
         
-        # return [
-        #     RetrievedDocument(**{
-        #         "score": result.score,
-        #         "text": result.payload["text"],
-        #     })
-        #     for result in results
-        # ]
-        return results
+
+        return [
+            RetrivedDocuments(**{
+                "score":doc.score,
+                "text":doc.payload['text']
+            })
+
+            for doc in results
+        ]
+        # return results
