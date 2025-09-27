@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     GROQ_API_KEY :str =None
     COHER_API_KEY:str =None
 
+    
+    BASE_URL_OLLAMA :str =None
+    BASE_URL_GROQ :str =None
+
     GENERATION_MODEL_ID :str =None
     EMBEDDING_MODEL_ID  :str =None
     EMBEDDING_MODEL_SIZE:int =None

@@ -32,6 +32,9 @@ Document_prompt =Template(
 Footer_prompt=Template(
     "\n".join([
         "Based on the above documents please generate the answer for the user",
+        "##Question:",
+        "$query",
+        "",
         "## Answer: ",
     ])
 )

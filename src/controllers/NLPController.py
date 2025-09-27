@@ -129,7 +129,7 @@ class NLPController(BaseController):
         print("[DEBUG] Step 4: Constructing footer prompt...")
 
 
-        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt')
+        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt',vars={"query":query})
 
         print("[DEBUG] Step 5: Constructing chat history...")
         chat_histoy = [

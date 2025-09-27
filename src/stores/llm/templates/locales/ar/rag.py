@@ -29,6 +29,9 @@ Document_prompt = Template(
 Footer_prompt = Template(
     "\n".join([
         "بناءً على المستندات أعلاه يرجى توليد الإجابة للمستخدم.",
+        "##السؤال:",
+        "$query",
+        "",
         "## الإجابة: ",
     ])
 )
