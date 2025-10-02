@@ -1,15 +1,17 @@
 from ..LLMInterface import LLMInterface
-from ..LLMEnum import GroqEnum
-from groq import Groq
+from ..LLMEnum import OpenAIEnum
+from openai import OpenAI
 import logging
 
-class GroqProvider(LLMInterface):
-    def __init__(self, api_key:str,
+class OpenAIProvider(LLMInterface):
+    def __init__(self, api_key:str,base_url:str,
                  default_input_max_characters:int = 1000,
                  default_generation_max_output_tokens:int =1000,
                  default_generation_temprature: float= 0.1):
               
         self.api_key=api_key
+        self.base_url =base_url
+
         self.default_input_max_characters=default_input_max_characters
         self.default_generation_max_output_tokens=default_generation_max_output_tokens
         self.default_generation_temprature=default_generation_temprature
@@ -18,13 +20,14 @@ class GroqProvider(LLMInterface):
         self.embedding_model_id=None
         self.embedding_size=None
 
-        self.client=Groq(
-            api_key=self.api_key
-        )
+        self.client=OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url,
+                )
 
         self.logger=logging.getLogger(__name__)
 
-        self.enums=GroqEnum
+        self.enums=OpenAIEnum
 
 
     def set_generation_model(self, model_id:str): # make you able to change model name during run time 
@@ -38,7 +41,7 @@ class GroqProvider(LLMInterface):
     def generate_text(self,prompt:str,chat_history:list=[],max_output_tokens:int =None,temprature:float=None):
         
         if self.client is None:
-            self.logger.error('Groq client was not set')
+            self.logger.error(' client was not set')
 
         if self.generation_mdoel_id is None:
             self.logger.error('generation model was not set')
@@ -50,7 +53,7 @@ class GroqProvider(LLMInterface):
 
 
         chat_history.append(
-            self.consturct_prompt(prompt, role=GroqEnum.USER.value)
+            self.consturct_prompt(prompt, role=self.enums.USER.value)
         )
 
         response = self.client.chat.completions.create(
@@ -62,7 +65,7 @@ class GroqProvider(LLMInterface):
 
         # validate response
         if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
-            self.logger.error('error while generating text from groq')
+            self.logger.error('error while generating text ')
             return None
 
         return response.choices[0].message.content

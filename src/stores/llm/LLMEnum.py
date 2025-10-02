@@ -7,7 +7,7 @@ class LLMEnum(Enum):
     OPENROUTER='OPENROUTER'
 
 
-class GroqEnum(Enum):
+class OpenAIEnum(Enum):
     SYSTEM ='system'
     USER ='user'
     ASSISTANT ='assistant'

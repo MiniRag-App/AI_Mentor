@@ -14,12 +14,12 @@ class Settings(BaseSettings):
     EMBEDDING_BACKEND :str 
 
 
-    GROQ_API_KEY :str =None
+    OPENAI_API_KEY :str =None
     COHER_API_KEY:str =None
+    GROQ_API_KEY :str =None
 
     
-    BASE_URL_OLLAMA :str =None
-    BASE_URL_GROQ :str =None
+    OPENAI_BASE_URL:str= None
 
     GENERATION_MODEL_ID :str =None
     EMBEDDING_MODEL_ID  :str =None

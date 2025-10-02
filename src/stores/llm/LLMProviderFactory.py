@@ -1,5 +1,6 @@
 from .LLMEnum import LLMEnum
-from .providers import CoHerProvider ,GroqProvider
+from .providers import CoHerProvider
+from .providers.OPenAIProvider import OpenAIProvider
 
 class LLMProviderFactory:
 
@@ -7,10 +8,11 @@ class LLMProviderFactory:
         self.config =config
 
 
-    def create(self,provider:str):
-        if provider == LLMEnum.GROQ.value :
-            return GroqProvider(
+    def create(self,provider:str,):
+        if provider == LLMEnum.OPENAI.value :
+            return OpenAIProvider(
                 api_key =self.config.GROQ_API_KEY,
+                base_url =self.config.OPENAI_BASE_URL,
                 default_input_max_characters =self.config.default_input_max_characters,
                 default_generation_max_output_tokens=self.config.default_generation_max_output_tokens,
                 default_generation_temprature =self.config.default_generation_temprature

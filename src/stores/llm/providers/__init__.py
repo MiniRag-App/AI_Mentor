@@ -1,2 +1,2 @@
 from .CoHerProvider import CoHerProvider
-from .GroqProvider import GroqProvider
+from .OPenAIProvider import OpenAIProvider
