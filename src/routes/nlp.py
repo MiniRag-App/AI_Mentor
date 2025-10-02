@@ -160,15 +160,17 @@ async def search_index(request:Request ,project_id:str ,search_request:SearchReq
 @nlp_router.post("/index/answer/{project_id}")
 async def answer_rag(request:Request ,project_id:str ,search_request:SearchRequest):
 
+    logger.info("[DEBUG] Received request for answer endpoint with project_id=%s, text=%s", project_id, search_request.text)
 
-      
     project_model = await ProjectDataModel.create_instance(
         db_client=request.app.db_client
     )
+    logger.info("[DEBUG] Project model created.")
 
     project = await project_model.get_project_or_create_one(
         project_id=project_id
     )
+    logger.info("[DEBUG] Project loaded or created: %s", project)
 
     nlp_controller = NLPController(
         vectordb_client=request.app.vectordb_client,
@@ -176,32 +178,43 @@ async def answer_rag(request:Request ,project_id:str ,search_request:SearchReque
         embedding_client=request.app.embedding_client,
         template_parser =request.app.template_parser
     )
+    logger.info("[DEBUG] NLPController initialized.")
 
-
-    answer,full_prompt,chat_histoy  = nlp_controller.answer_rag_question(
-        project =project,
-        query =search_request.text,
-        limit =search_request.limit
-    )
-   
-
-    if not answer :
-        return JSONResponse(
-        status_code =status.HTTP_400_BAD_REQUEST,
-        content={
-            "signal": ResponseSignals.RAG_ANSWER_ERROR.value
-        }
+    try:
+        answer, full_prompt, chat_histoy = nlp_controller.answer_rag_question(
+            project=project,
+            query=search_request.text,
+            limit=search_request.limit
         )
-    
-    
+        logger.info("[DEBUG] answer_rag_question completed.")
+    except Exception as e:
+        logger.error("[ERROR] Exception in answer_rag_question: %s", str(e))
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "signal": ResponseSignals.RAG_ANSWER_ERROR.value,
+                "error": str(e)
+            }
+        )
+
+    if not answer:
+        logger.info("[DEBUG] No answer returned from answer_rag_question.")
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "signal": ResponseSignals.RAG_ANSWER_ERROR.value
+            }
+        )
+
+    logger.info("[DEBUG] Returning answer response.")
     return JSONResponse(
         content={
             "signal": ResponseSignals.RAG_ANSWER_SUCCESS.value,
-            "answer":answer,
-            "full_prompt":full_prompt,
-            "chat_history":chat_histoy
+            "answer": answer,
+            "full_prompt": full_prompt,
+            "chat_history": chat_histoy
         }
-        )
+    )
     
 
 
