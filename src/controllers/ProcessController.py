@@ -11,7 +11,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 logger =logging.getLogger('uvicorn.error')
 
 class ProcessController(BaseController):
-    def __init__(self,project_id:str):
+    def __init__(self,project_id:int):
         super().__init__()
         self.project_id =project_id
         self.project_path =ProjectController().get_project_path(project_id=project_id)

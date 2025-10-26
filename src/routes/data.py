@@ -2,12 +2,12 @@ from fastapi import APIRouter,UploadFile,status,Request
 from helpers.config import Settings,get_settings
 from fastapi.responses import JSONResponse
 from controllers import DataController,ProjectController,ProcessController
-from models import ResponseSignals,ProjectDataModel,ChunkDataModel
+from models import ResponseSignals,ProjectDataModel,ChunkDataModel,AssetModel 
 from models import AssetTypeEnum
 import os
 import aiofiles
 import logging
-from models import DataChunk,ProjectDataModel,AssetModel ,Assets
+from models.db_schemes import DataChunk,Asset
 from datetime import datetime
 
 
@@ -22,7 +22,7 @@ data_router =APIRouter(
 app_settings =get_settings()
 
 @data_router.post('/upload/{project_id}')
-async def upload_data(request:Request,project_id:str,file:UploadFile):
+async def upload_data(request:Request,project_id:int,file:UploadFile):
        # store project_id in mongodb
        project_model =await ProjectDataModel.create_instance(
               db_client =request.app.db_client
@@ -73,8 +73,8 @@ async def upload_data(request:Request,project_id:str,file:UploadFile):
               db_client=request.app.db_client
               )
        
-       asset =Assets(
-              asset_project_id =project.id,
+       asset =Asset(
+              asset_project_id =project.project_id,
               asset_type=AssetTypeEnum.ASSET_TYPE.value,
               asset_name =file_id,
               asset_size =os.path.getsize(file_path)
@@ -84,13 +84,13 @@ async def upload_data(request:Request,project_id:str,file:UploadFile):
        return JSONResponse(
                      content={
                             'singal':ResponseSignals.FILE_UPLOADED_SUCCESS.value,
-                            'file_id':str(asset_record.id)
+                            'file_id':str(asset_record.asset_id)
                      }     )
   
 
 
 @data_router.post('/process/{project_id}')
-async def process_endpoint(request:Request,project_id:str,process_request:ProcessRequest):
+async def process_endpoint(request:Request,project_id:int,process_request:ProcessRequest):
        chunk_size =process_request.chunk_size
        overlap =process_request.overlap
        do_reset =process_request.do_reset
@@ -107,7 +107,7 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
               db_client=request.app.db_client
               )
               asset_record =await asset_model.get_asset_record(
-                     asset_project_id=project.id,
+                     asset_project_id=project.project_id,
                      asset_name =process_request.file_id
                      )
               
@@ -121,7 +121,7 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
                      )
 
               project_files_ids={
-                     asset_record.id:asset_record.asset_name
+                     asset_record.asset_id:asset_record.asset_name
               }
        else:
               asset_model =await AssetModel.create_instance(
@@ -129,12 +129,12 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
               )
               
               project_files_list =await asset_model.get_all_project_assets(
-                     asset_project_id=project.id,
+                     asset_project_id=project.project_id,
                      asset_type=AssetTypeEnum.ASSET_TYPE.value
               )
 
               project_files_ids ={
-                     record.id:record.asset_name
+                     record.asset_id:record.asset_name
                      for record in project_files_list
               }
 
@@ -154,7 +154,7 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
 
        if do_reset ==1:
               _ = await chunk_model.delete_chunk_by_project_id(
-                     project_id =project.id
+                     project_id =project.project_id
                      )
 
 
@@ -194,7 +194,7 @@ async def process_endpoint(request:Request,project_id:str,process_request:Proces
                      chunk_text=chunk.page_content,
                      chunk_order=i+1,
                      chunk_metadata=chunk.metadata,
-                     chunk_project_id =project.id,
+                     chunk_project_id =project.project_id,
                      chunk_asset_id=asset_id
                      )
                      for i,chunk in enumerate(file_chunks)

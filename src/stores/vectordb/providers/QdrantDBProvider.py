@@ -1,7 +1,7 @@
 from qdrant_client import models, QdrantClient
 from ..VectorDBInterface import VecotrDBInterface
 from ..VectorDBEnum import DistanceMethodEnum
-from models import RetrivedDocuments
+from models import RetrievedDocument
 import logging
 from typing import List
 import time
@@ -166,7 +166,7 @@ class QdrantDBProvider(VecotrDBInterface):
         
 
         return [
-            RetrivedDocuments(**{
+            RetrievedDocument(**{
                 "score":doc.score,
                 "text":doc.payload['text']
             })

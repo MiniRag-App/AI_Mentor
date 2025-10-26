@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from models import Project,DataChunk
+from models.db_schemes import Project,DataChunk
 from typing import List
 from stores import DocumentTypeEnum
 import time 
@@ -15,7 +15,7 @@ class NLPController(BaseController):
         self.template_parser =template_parser
 
 
-    def create_collection_name(self ,project_id:str):
+    def create_collection_name(self ,project_id:int):
         return f"collection_{project_id}".strip()
     
 
@@ -121,7 +121,7 @@ class NLPController(BaseController):
                 key='Document_prompt',
                 vars={
                     "doc_num": idx,
-                    "chunk_text": doc.text
+                    "chunk_text":self.generation_client.proecess_text(doc.text)
                 })
             for idx, doc in enumerate(retrieved_documents)
         ])

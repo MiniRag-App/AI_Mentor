@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import List
 
 class Settings(BaseSettings):
     APP_NAME:str
@@ -23,8 +24,10 @@ class Settings(BaseSettings):
     COHER_API_KEY:str =None
     GROQ_API_KEY :str =None
 
-    
+    OPENAI_BASE_URL_LITERAL :List[str] = None
     OPENAI_BASE_URL:str= None
+
+    GENERATION_MODEL_ID_LITERAL :List[str] = None
 
     GENERATION_MODEL_ID :str =None
     EMBEDDING_MODEL_ID  :str =None
