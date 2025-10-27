@@ -19,6 +19,8 @@ class PGVectorProvider(VecotrDBInterface):
 
         self.logger =logging.getLogger('uvicorn')
 
+        self.default_index_name =lambda collection_name: f"{collection_name}_vector_idx"
+
 
     async def connect(self):
         ''' try to connect to pgvector extextion and 
@@ -138,6 +140,154 @@ class PGVectorProvider(VecotrDBInterface):
                 return True
             
             return False
+        
+    async def is_index_existed(self,collection_name) ->bool :
+
+        index_name = self.default_index_name(collection_name)
+
+        async with self.db_client as session:
+            async with session.begin():
+                check_sql =sql_text('''
+                                    select 1
+                                    from pg_indexes
+                                    where collection_name = : collection_name and index_name = :index_name 
+                                    ''')
+               
+                result =await session.execute(check_sql,{
+                    'collection_name' :collection_name,
+                    'index_name': index_name
+                })
+
+                return bool(result.scalar_one_or_none())
+
+
+
+    async def insert_one(self,collection_name:str,text:str ,vector:list,
+                   metadata:dict=None ,record_id:str =None):
+        
+        '''record_id = chunk_id'''
+
+        # check if collection is existed or not 
+        is_collection_exist =await self.is_collection_existed(collection_name=collection_name)
+
+        if not is_collection_exist:
+            self.logger.error(f"Can not insert new record to not existed collection {collection_name}")
+            return False
+        
+        if not record_id:
+            self.logger.error(f"can not insert new record without chunk_id in : {collection_name}")
+            return False
+        
+        async with self.db_client as session:
+            async with session.begin():
+                metadata_json = json.dumps(metadata,ensure_ascii=False) if metadata is not None else '{}'
+                sql_query =sql_text(f'insert into {collection_name}'
+                                    f'({PGvectorTableSchemaEnums.TEXT.value},{PGvectorTableSchemaEnums.CHUNK_ID.value},'
+                                    f'{PGvectorTableSchemaEnums.VECTOR.value},'
+                                    f'{PGvectorTableSchemaEnums.METADATA.value},'
+                                    'values (:text, :record_id, :vector, :metadata)')
+                
+                await session.execute(sql_query,{
+                    'text': text,
+                    'vector': "["+','.join([ str(v) for v in vector])+"]",
+                    'metadata': metadata_json,
+                    'record_id' : record_id 
+                })
+              
+                await session.commit()
+
+        return True
+
+    async def insert_many(self,collection_name:str, texts:list ,vecotrs:list,
+                    metadata:list=None ,record_id:list=None,
+                    batch_size:int =50):
+        
+           # check if collection is existed or not 
+        is_collection_exist =await self.is_collection_existed(collection_name=collection_name)
+
+        if not is_collection_exist:
+            self.logger.error(f"Can not insert new record to not existed collection {collection_name}")
+            return False
+        
+
+        # validate if len vectors == len text 
+        if len(vecotrs) != len(texts):
+            self.logger.error(f'len vectors not equal len texts this is not valid to insert into {collection_name}')
+            return False
+        
+        if len(metadata) == 0 or not metadata:
+            metadata =[None] * len(texts)
+
+        
+        async with self.db_client as session:
+            async with session.begin():
+
+                for i in range(0,len(texts),batch_size):
+
+                    batch_text =texts[i:i+batch_size]
+                    batch_vectors =vecotrs[i:i+batch_size]
+                    batch_metadata =metadata[i:i+batch_size]
+                    batch_record_id = record_id[i+i+batch_size]
+                    
+
+                    values =[]
+                    for _text ,_vector ,_metadata,_record_id in zip(batch_text,batch_vectors,batch_metadata,batch_record_id):
+                        metadata_json =json.dumps(_metadata,ensure_ascii=False) if metadata is not None else '{}'
+                        values.append({
+                        'text': _text,
+                        'vector': "["+','.join([ str(v) for v in _vector])+"]",
+                        'metadata': metadata_json,
+                        'record_id' : _record_id 
+            
+                        })
+                    
+
+                        sql_query =sql_text(f'insert into {collection_name}'
+                                            f'({PGvectorTableSchemaEnums.TEXT.value},{PGvectorTableSchemaEnums.CHUNK_ID.value},'
+                                            f'{PGvectorTableSchemaEnums.VECTOR.value},'
+                                            f'{PGvectorTableSchemaEnums.METADATA.value},'
+                                            'values (:text, :record_id, :vector, :metadata)')
+                            
+                        await session.execute(sql_query,values)
+                    
+        return True
+    
+    async def  search_by_vector(self,collection_name:str ,vector:list ,limit :int) -> List [RetrievedDocument]:
+
+        # check if collection is existed or not 
+        is_collection_exist =await self.is_collection_existed(collection_name=collection_name)
+
+        if not is_collection_exist:
+            self.logger.error(f"Can not search for records in non existed collection {collection_name}")
+            return False
+        
+
+        # convert vector into string 
+        vector ="["+','.join([ str(v) for v in vector])+"]"
+
+        # search on similar vectors by using cosine similarity : <=>
+
+        async with self.db_client as session:
+            async with session.begin():
+                sql_query =sql_text(f'select {PGvectorTableSchemaEnums.TEXT.value} as text , '
+                                    f'1- {PGvectorTableSchemaEnums.VECTOR.value} <=> :vector as score'
+                                    f'from {collection_name}' 
+                                    'order by score desc'
+                                    f'limit {limit}'
+                                    )
+                
+                result =await session.execute(sql_query,{'vector':vector})
+
+                records =result.fetchall()
+
+                return [
+                    RetrievedDocument(
+                        text = record.text,
+                        score =record.score
+                    )
+                    for record in records 
+                ]
+
 
 
 

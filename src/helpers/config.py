@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     VECTORE_DB_BACKEND :str
     VECTORE_DB_PATH :str
     VECTORE_DB_DISTANCE_METHOD :str =None
+    VECTOR_DB_PGVEC_INDEX_THRETHORD :int =100
 
     DEFAULT_LANG :str 
     PRIMARY_LANG :str
