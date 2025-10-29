@@ -1,5 +1,5 @@
 from ..VectorDBInterface import VecotrDBInterface
-from ..VectorDBEnum import PGvectorDistanceMethodsEnum,PGvectorTableSchemaEnums,PGVectorIndexTypeEnum
+from ..VectorDBEnum import PGvectorDistanceMethodsEnum,PGvectorTableSchemaEnums,PGVectorIndexTypeEnum,DistanceMethodEnum
 
 from models import RetrievedDocument
 import logging
@@ -10,12 +10,17 @@ import json
 
 class PGVectorProvider(VecotrDBInterface):
 
-    def __init__(self, db_client , distance_methods :str = None ,default_vector_size :int =786):
+    def __init__(self, db_client , distance_methods :str = None ,default_vector_size :int =786 ,index_threshold :int =100):
 
         self.db_client =db_client 
-        self.distance_methods =distance_methods
         self.default_vector_size =default_vector_size
-        self.pgvector_prefix =PGvectorTableSchemaEnums._PREFIX.value # to define each table as pgvector table 
+        self.pgvector_prefix =PGvectorTableSchemaEnums._PREFIX.value # to define each table as pgvector table
+        self.index_threshold = index_threshold 
+
+        if distance_methods == DistanceMethodEnum.COSINE.value:
+            distance_methods =PGvectorDistanceMethodsEnum.COSINE.value
+        if distance_methods == DistanceMethodEnum.DOT.value:
+            distance_methods =PGvectorDistanceMethodsEnum.DOT.value
 
         self.logger =logging.getLogger('uvicorn')
 
@@ -45,7 +50,7 @@ class PGVectorProvider(VecotrDBInterface):
                                             select * from pg_tables 
                                             where table_name = : collection_name
                                             ''')
-                    results =session.execute(list_tables,{'collection_name':collection_name})
+                    results =await session.execute(list_tables,{'collection_name':collection_name})
                     record =results.scalar_one_or_none()
 
                 return record
@@ -60,14 +65,14 @@ class PGVectorProvider(VecotrDBInterface):
                                             select table_name from pg_tables 
                                             where table_name like :prefix
                                             ''')
-                    results =session.execute(list_tables,{'prefix':self.pgvector_prefix})
+                    results =await session.execute(list_tables,{'prefix':self.pgvector_prefix})
                     records =results.scalars.all()
 
                 return records
    
     async def get_collection_info(self, collection_name:str):
          
-        async with self.db_client as session:
+        async with self.db_client() as session:
             async with session.begin():
                 table_info_sql =sql_text('''
                     select schemaname, tablename, tableowner, tablespace, hasindexes 
@@ -78,8 +83,8 @@ class PGVectorProvider(VecotrDBInterface):
                 
                 table_count_records =sql_text('''select count(*) from : collection_name''')
 
-                table_info =session.execute(table_info_sql,{'collection_name':collection_name})
-                table_num_records =session.execute(table_count_records,{'collection_name':collection_name})
+                table_info =await session.execute(table_info_sql,{'collection_name':collection_name})
+                table_num_records =await session.execute(table_count_records,{'collection_name':collection_name})
 
 
                 table_data =table_info.fetchone()
@@ -99,7 +104,7 @@ class PGVectorProvider(VecotrDBInterface):
                 }
             
     async def delete_collection(self,collection_name):
-        async with self.db_client as session:
+        async with self.db_client() as session:
             async with session.begin():
                 self.logger.info('Deleting collection {collection_name}')
 
@@ -145,7 +150,7 @@ class PGVectorProvider(VecotrDBInterface):
 
         index_name = self.default_index_name(collection_name)
 
-        async with self.db_client as session:
+        async with self.db_client() as session:
             async with session.begin():
                 check_sql =sql_text('''
                                     select 1
@@ -159,6 +164,64 @@ class PGVectorProvider(VecotrDBInterface):
                 })
 
                 return bool(result.scalar_one_or_none())
+
+    async def create_vector_index(self,collection_name:str, index_type :str =PGVectorIndexTypeEnum.HNSW.value):
+
+        # check if index existed  
+        is_index_existed = self.is_index_existed(collection_name=collection_name)
+
+        if  is_index_existed:
+            self.logger.info("index is already existed")
+            return False
+        
+        async with self.db_client() as session:
+            async with session.begin():
+                count_sql =sql_text(''' select count(*) as rows_count from : collection_name''')
+
+                result =await session.execute(count_sql,{'collection_name':collection_name})
+                count_rows  =result.scalar_one()
+
+                if count_rows < self.index_threshold:
+                    self.logger.info(f'number of records inside {collection_name} is less than index threshold {self.index_threshold}')
+                    return False
+                
+                self.logger.info(f'START: creating vectore index for collection {collection_name}')
+                
+                index_name =self.default_index_name(collection_name)
+
+                create_idx_sql =sql_text(f'create index  {index_name} on {collection_name} '
+                                         f'using {index_type} {PGvectorTableSchemaEnums.VECTOR.value} {self.distance_methods}'
+                                        )
+                
+                await session.execute(create_idx_sql)
+
+
+                self.logger.info(f'END: created vectore index for collection {collection_name}')
+
+                   
+    async def reset_vector_index(self,collection_name:str,index_type:str =PGVectorIndexTypeEnum.HNSW.value)->bool:
+        ''' we will drop old index and create new one '''
+
+        # check if index existed  
+        is_index_existed = self.is_index_existed(collection_name=collection_name)
+
+        if not is_index_existed:
+            self.logger.info(f"index is not existed in {collection_name}")
+            await self.create_vector_index(collection_name,index_type)
+            return True
+        
+        index_name =self.default_index_name(collection_name)
+
+        async with self.db_client() as session:
+            async with session.begin():
+                reset_idx_sql =sql_text(
+                                         f'drop index if exist {index_name}'
+                )
+                
+                await session.execute(reset_idx_sql)
+
+        
+        return await self.create_vector_index(collection_name,index_type)
 
 
 
@@ -195,6 +258,7 @@ class PGVectorProvider(VecotrDBInterface):
                 })
               
                 await session.commit()
+                await self.create_vector_index(collection_name=collection_name)
 
         return True
 
@@ -249,7 +313,8 @@ class PGVectorProvider(VecotrDBInterface):
                                             'values (:text, :record_id, :vector, :metadata)')
                             
                         await session.execute(sql_query,values)
-                    
+                        
+        await self.create_vector_index(collection_name=collection_name)   
         return True
     
     async def  search_by_vector(self,collection_name:str ,vector:list ,limit :int) -> List [RetrievedDocument]:

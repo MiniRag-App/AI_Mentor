@@ -1,7 +1,7 @@
 from fastapi import APIRouter,UploadFile,status,Request
 from helpers.config import Settings,get_settings
 from fastapi.responses import JSONResponse
-from controllers import DataController,ProjectController,ProcessController
+from controllers import DataController,ProjectController,ProcessController,NLPController
 from models import ResponseSignals,ProjectDataModel,ChunkDataModel,AssetModel 
 from models import AssetTypeEnum
 import os
@@ -9,7 +9,6 @@ import aiofiles
 import logging
 from models.db_schemes import DataChunk,Asset
 from datetime import datetime
-
 
 from .schemes import ProcessRequest
 
@@ -98,6 +97,15 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
        project_model =await ProjectDataModel.create_instance(
               db_client=request.app.db_client
        )
+
+       nlp_controller =NLPController(                    
+                     vectordb_client=request.app.vectordb_client,
+                     generation_client=request.app.generation_client,
+                     embedding_client=request.app.embedding_client,
+                     template_parser =request.app.template_parser
+                     )
+       
+
        project =await project_model.get_project_or_create_one(project_id=project_id)
 
        project_files_ids={}
@@ -153,9 +161,11 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
               )
 
        if do_reset ==1:
+              # delete chunks and vectors
               _ = await chunk_model.delete_chunk_by_project_id(
                      project_id =project.project_id
                      )
+              _ = await nlp_controller.reset_vectordb_collection(project=project)
 
 
        process_controller =ProcessController(project_id =project_id)
