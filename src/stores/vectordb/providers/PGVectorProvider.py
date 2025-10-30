@@ -34,7 +34,7 @@ class PGVectorProvider(VecotrDBInterface):
         async with self.db_client() as session :
             async with session.begin():
                 await session.execute(sql_text(
-                    "CREATE EXTENTION IF NOT EXIST vector"
+                    "CREATE EXTENSION IF NOT EXISTS vector"
                 ))
             await session.commit()
 
@@ -46,10 +46,7 @@ class PGVectorProvider(VecotrDBInterface):
 
           async with self.db_client() as session:
                 async with session.begin():
-                    list_tables =sql_text('''
-                                            select * from pg_tables 
-                                            where table_name = : collection_name
-                                            ''')
+                    list_tables =sql_text('select * from pg_tables where tablename = :collection_name')
                     results =await session.execute(list_tables,{'collection_name':collection_name})
                     record =results.scalar_one_or_none()
 
@@ -61,11 +58,10 @@ class PGVectorProvider(VecotrDBInterface):
 
          async with self.db_client() as session:
                 async with session.begin():
-                    list_tables =sql_text('''
-                                            select table_name from pg_tables 
-                                            where table_name like :prefix
-                                            ''')
-                    results =await session.execute(list_tables,{'prefix':self.pgvector_prefix})
+                    list_tables =sql_text('select table_name from pg_tables ' 
+                                        f'where table_name like {self.pgvector_prefix}'
+                                        )
+                    results =await session.execute(list_tables)
                     records =results.scalars.all()
 
                 return records
@@ -74,17 +70,16 @@ class PGVectorProvider(VecotrDBInterface):
          
         async with self.db_client() as session:
             async with session.begin():
-                table_info_sql =sql_text('''
-                    select schemaname, tablename, tableowner, tablespace, hasindexes 
-                    from pg_tables
-                    where table_name = : collection_name
-                    
-                  ''')
+                table_info_sql =sql_text(
+                    'select schemaname, tablename, tableowner, tablespace, hasindexes ' 
+                    'from pg_tables '
+                    f'where table_name = {collection_name}'
+                    )
                 
-                table_count_records =sql_text('''select count(*) from : collection_name''')
+                table_count_records =sql_text(f'select count(*) from {collection_name}')
 
-                table_info =await session.execute(table_info_sql,{'collection_name':collection_name})
-                table_num_records =await session.execute(table_count_records,{'collection_name':collection_name})
+                table_info =await session.execute(table_info_sql)
+                table_num_records =await session.execute(table_count_records)
 
 
                 table_data =table_info.fetchone()
@@ -106,40 +101,39 @@ class PGVectorProvider(VecotrDBInterface):
     async def delete_collection(self,collection_name):
         async with self.db_client() as session:
             async with session.begin():
-                self.logger.info('Deleting collection {collection_name}')
+                self.logger.info(f'Deleting collection {collection_name}')
 
-                query =sql_text('''
-                    drop table if exists : collection_name
-                  ''')
+                query =sql_text(
+                   f' drop table if exists {collection_name}'
+                )
                 
-                await session.execute(query,{'collection_name':collection_name})
+                await session.execute(query)
                 await session.commit()
         return True
     
     async def create_collection(self,collection_name:str,embedding_size:int, do_reset:bool=False):
 
         if do_reset:
-            _ =self.delete_collection(collection_name=collection_name)
+            _ =await self.delete_collection(collection_name=collection_name)
         
         is_exist =await self.is_collection_existed(collection_name=collection_name)
 
         if not is_exist:
             self.logger.info('creating collection {collection_name}')
 
-            async with self.db_client as session:
+            async with self.db_client() as session:
                 async with session.begin():
-                    query =sql_text(
-                             f'create table {collection_name} ('
-                             f'{PGvectorTableSchemaEnums.ID.value} bigserial primary key,',
-                             f'{PGvectorTableSchemaEnums.TEXT.value} text,'
-                             f"{PGvectorTableSchemaEnums.CHUNK_ID.value} intger ,"
-                             f'{PGvectorTableSchemaEnums.VECTOR.value} vectore({embedding_size}),'
-                             f'{PGvectorTableSchemaEnums.METADATA.value} jsonb default \'{{}}\','
-                             f'foreing key {PGvectorTableSchemaEnums.CHUNK_ID.value} references chunks(chunk_id)'
-                             ')'         
+                    create_sql = sql_text(
+                        f"CREATE TABLE {collection_name} ("
+                        f"{PGvectorTableSchemaEnums.ID.value} BIGSERIAL PRIMARY KEY, "
+                        f"{PGvectorTableSchemaEnums.TEXT.value} TEXT, "
+                        f"{PGvectorTableSchemaEnums.CHUNK_ID.value} INTEGER, "
+                        f"{PGvectorTableSchemaEnums.VECTOR.value} vector({embedding_size}), "
+                        f"{PGvectorTableSchemaEnums.METADATA.value} JSONB DEFAULT '{{}}'"
+                        ")"
                     )
 
-                    await session.execute(query)
+                    await session.execute(create_sql)
                     await session.commit()
 
                 return True
@@ -152,16 +146,13 @@ class PGVectorProvider(VecotrDBInterface):
 
         async with self.db_client() as session:
             async with session.begin():
-                check_sql =sql_text('''
-                                    select 1
-                                    from pg_indexes
-                                    where collection_name = : collection_name and index_name = :index_name 
-                                    ''')
+                check_sql =sql_text(
+                                    'select 1 '
+                                    'from pg_indexes '
+                                    f'where collection_name ={ collection_name} and index_name = {index_name}' 
+                                )
                
-                result =await session.execute(check_sql,{
-                    'collection_name' :collection_name,
-                    'index_name': index_name
-                })
+                result =await session.execute(check_sql)
 
                 return bool(result.scalar_one_or_none())
 
@@ -176,9 +167,9 @@ class PGVectorProvider(VecotrDBInterface):
         
         async with self.db_client() as session:
             async with session.begin():
-                count_sql =sql_text(''' select count(*) as rows_count from : collection_name''')
+                count_sql =sql_text(' select count(*) as rows_count from {collection_name}')
 
-                result =await session.execute(count_sql,{'collection_name':collection_name})
+                result =await session.execute(count_sql )
                 count_rows  =result.scalar_one()
 
                 if count_rows < self.index_threshold:
@@ -203,7 +194,7 @@ class PGVectorProvider(VecotrDBInterface):
         ''' we will drop old index and create new one '''
 
         # check if index existed  
-        is_index_existed = self.is_index_existed(collection_name=collection_name)
+        is_index_existed = await self.is_index_existed(collection_name=collection_name)
 
         if not is_index_existed:
             self.logger.info(f"index is not existed in {collection_name}")
@@ -243,28 +234,25 @@ class PGVectorProvider(VecotrDBInterface):
         
         async with self.db_client as session:
             async with session.begin():
+
                 metadata_json = json.dumps(metadata,ensure_ascii=False) if metadata is not None else '{}'
+                vector ="["+','.join([ str(v) for v in vector])+"]"
+
                 sql_query =sql_text(f'insert into {collection_name}'
                                     f'({PGvectorTableSchemaEnums.TEXT.value},{PGvectorTableSchemaEnums.CHUNK_ID.value},'
                                     f'{PGvectorTableSchemaEnums.VECTOR.value},'
                                     f'{PGvectorTableSchemaEnums.METADATA.value},'
-                                    'values (:text, :record_id, :vector, :metadata)')
+                                    f'values ({text}, {record_id}, {vector}, {metadata_json})')
                 
-                await session.execute(sql_query,{
-                    'text': text,
-                    'vector': "["+','.join([ str(v) for v in vector])+"]",
-                    'metadata': metadata_json,
-                    'record_id' : record_id 
-                })
+                await session.execute(sql_query)
               
                 await session.commit()
                 await self.create_vector_index(collection_name=collection_name)
 
         return True
 
-    async def insert_many(self,collection_name:str, texts:list ,vecotrs:list,
-                    metadata:list=None ,record_id:list=None,
-                    batch_size:int =50):
+    async def insert_many(self,collection_name:str, texts:list ,record_id:list,vectors:list,
+                        metadata:list=None ,batch_size:int =50):
         
            # check if collection is existed or not 
         is_collection_exist =await self.is_collection_existed(collection_name=collection_name)
@@ -275,23 +263,24 @@ class PGVectorProvider(VecotrDBInterface):
         
 
         # validate if len vectors == len text 
-        if len(vecotrs) != len(texts):
+        if len(vectors) != len(texts):
             self.logger.error(f'len vectors not equal len texts this is not valid to insert into {collection_name}')
             return False
         
         if len(metadata) == 0 or not metadata:
             metadata =[None] * len(texts)
 
-        
-        async with self.db_client as session:
+        if len(record_id) == 0:
+            print('record id is None')
+        async with self.db_client() as session:
             async with session.begin():
 
                 for i in range(0,len(texts),batch_size):
 
                     batch_text =texts[i:i+batch_size]
-                    batch_vectors =vecotrs[i:i+batch_size]
+                    batch_vectors =vectors[i:i+batch_size]
                     batch_metadata =metadata[i:i+batch_size]
-                    batch_record_id = record_id[i+i+batch_size]
+                    batch_record_id = record_id[i:i+batch_size]
                     
 
                     values =[]
@@ -309,7 +298,7 @@ class PGVectorProvider(VecotrDBInterface):
                         sql_query =sql_text(f'insert into {collection_name}'
                                             f'({PGvectorTableSchemaEnums.TEXT.value},{PGvectorTableSchemaEnums.CHUNK_ID.value},'
                                             f'{PGvectorTableSchemaEnums.VECTOR.value},'
-                                            f'{PGvectorTableSchemaEnums.METADATA.value},'
+                                            f'{PGvectorTableSchemaEnums.METADATA.value})'
                                             'values (:text, :record_id, :vector, :metadata)')
                             
                         await session.execute(sql_query,values)

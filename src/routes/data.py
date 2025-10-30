@@ -9,6 +9,7 @@ import aiofiles
 import logging
 from models.db_schemes import DataChunk,Asset
 from datetime import datetime
+import asyncio
 
 from .schemes import ProcessRequest
 
@@ -83,7 +84,7 @@ async def upload_data(request:Request,project_id:int,file:UploadFile):
        return JSONResponse(
                      content={
                             'singal':ResponseSignals.FILE_UPLOADED_SUCCESS.value,
-                            'file_id':str(asset_record.asset_id)
+                            'asset_name':str(asset_record.asset_name)
                      }     )
   
 

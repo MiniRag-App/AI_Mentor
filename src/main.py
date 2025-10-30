@@ -27,7 +27,7 @@ async def lifespan(app:FastAPI):
     )
 
     
-    llm_provider_factory =LLMProviderFactory(settings)
+    llm_provider_factory =LLMProviderFactory(config =settings)
     
     # generation client
     app.generation_client  =llm_provider_factory.create(provider =settings.GENERATION_BACKEND)
@@ -39,11 +39,11 @@ async def lifespan(app:FastAPI):
                                              ,embedding_size =settings.EMBEDDING_MODEL_SIZE)
     
     # vectore db 
-    vectordb_provider_factory =VectorDBProviderFactory(settings)
+    vectordb_provider_factory =VectorDBProviderFactory(config =settings,db_client=app.db_client)
     app.vectordb_client =vectordb_provider_factory.create(Provider=settings.VECTORE_DB_BACKEND)
 
     # connect to vectordb
-    app.vectordb_client.connect()
+    await app.vectordb_client.connect()
 
     # define object from template parser 
     app.template_parser =TemplateParser(
@@ -55,7 +55,7 @@ async def lifespan(app:FastAPI):
     yield
     # when app shutdown
     app.db_engine.dispose()
-    app.vectordb_client.disconnect()
+    await app.vectordb_client.disconnect()
 
     
 

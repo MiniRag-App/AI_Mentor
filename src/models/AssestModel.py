@@ -28,8 +28,9 @@ class AssetModel(BaseDataModel):
                               Asset.asset_project_id == asset_project_id,
                               Asset.asset_type == asset_type
                               )
-                        projects =await session.execute(query).scalars().all()
-            return projects
+                        result =await session.execute(query)
+                        records =result.scalars().all()
+            return records
           
     
     async def get_asset_record(self,asset_project_id:int,asset_name:str):

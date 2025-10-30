@@ -11,19 +11,19 @@ class VectorDBProviderFactory:
 
 
     def create(self,Provider:str):
-        qdrant_db_client =self.BaseController.get_vectoredb_client(db_name =self.config.VECTORE_db_client)
+        qdrant_db_client =self.BaseController.get_vectoredb_path(db_name =self.config.VECTORE_DB_PATH)
 
         if Provider == VectorDBEnum.QDRANT.value:
             return QdrantDBProvider(
                 db_client =qdrant_db_client,
-                distance_method =self.config.VECTORE_DB_DISTANCE_METHOD,
+                distance_methods =self.config.VECTORE_DB_DISTANCE_METHOD,
                 default_vector_size=self.config.EMBEDDING_MODEL_SIZE,
                 index_threshold=self.config.VECTOR_DB_PGVEC_INDEX_THRETHORD
             )
         if Provider == VectorDBEnum.PGVECTOR.value:
             return PGVectorProvider(
                 db_client=self.db_client,
-                distance_method =self.config.VECTORE_DB_DISTANCE_METHOD,
+                distance_methods =self.config.VECTORE_DB_DISTANCE_METHOD,
                 default_vector_size=self.config.EMBEDDING_MODEL_SIZE,
                 index_threshold=self.config.VECTOR_DB_PGVEC_INDEX_THRETHORD
             )

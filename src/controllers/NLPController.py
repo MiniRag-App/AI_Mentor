@@ -59,7 +59,8 @@ class NLPController(BaseController):
             collection_name=collection_name,
             texts=texts,
             metadata=metadata,
-            vectors=vectors
+            vectors=vectors,
+            record_id =chunks_ids
         )
 
         return True

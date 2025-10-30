@@ -50,6 +50,11 @@ class ProcessController(BaseController):
             return docs
         return None
     
+    def get_clean_text(self,text):
+        return text.replace('\x00', '').strip()
+
+
+
     def get_file_chunks(self,file_content,chunk_size=100,overlap_size=20):
         spliter =RecursiveCharacterTextSplitter(
               chunk_size=chunk_size,
@@ -58,7 +63,7 @@ class ProcessController(BaseController):
         )
         
         file_content_text=[
-            rec.page_content
+            self.get_clean_text(rec.page_content)
             for rec in file_content
         ]
 

@@ -15,7 +15,7 @@ class QdrantDBProvider(VecotrDBInterface):
 
         self.client = None
         self.db_client =db_client
-        self.distance_method = None
+        self.distance_method = distance_methods
         self.default_vector_size =default_vector_size
         self.index_threshold =index_threshold
 
@@ -33,6 +33,8 @@ class QdrantDBProvider(VecotrDBInterface):
         self.client = None
 
     async def is_collection_existed(self, collection_name: str) -> bool:
+        if self.client is None :
+            print("qdrant client is None")
         return self.client.collection_exists(collection_name=collection_name)
     
     async def list_all_collections(self) -> List:
@@ -42,17 +44,9 @@ class QdrantDBProvider(VecotrDBInterface):
         return self.client.get_collection(collection_name=collection_name)
     
     async def delete_collection(self, collection_name: str):
-            # Delete via Qdrant API
-            print(f"[DEBUG] Attempting to delete collection: {collection_name}")
-            if await self.is_collection_existed(collection_name):
-                self.client.delete_collection(collection_name=collection_name)
-
-            # Fallback: Remove folder from disk if it still exists
-            collection_path = os.path.join(self.db_client, "collection", collection_name)
-
-            if os.path.exists(collection_path):
-                print(f"[DEBUG] Manually removing collection folder: {collection_path}")
-                shutil.rmtree(collection_path)
+        if await self.is_collection_existed(collection_name):
+            self.logger.info(f"Deleting collection: {collection_name}")
+            return self.client.delete_collection(collection_name=collection_name)
 
 
 
@@ -61,9 +55,9 @@ class QdrantDBProvider(VecotrDBInterface):
                                 do_reset: bool = False):
        
         if do_reset:
-            _ = self.delete_collection(collection_name=collection_name)
-            print(f"collection deleted------------{collection_name}---------")
+            _ = await self.delete_collection(collection_name=collection_name)
             time.sleep(0.2)  # Give Qdrant time to remove the collection
+            
 
             _ = self.client.create_collection(
                 collection_name=collection_name,

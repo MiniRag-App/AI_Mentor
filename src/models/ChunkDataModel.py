@@ -33,7 +33,7 @@ class ChunkDataModel(BaseDataModel):
                         query = select(DataChunk).where(DataChunk.chunk_id ==chunk_id)
                         chunk =await session.execute(query).scalar_one()
 
-    async def insert_many_chunks(self,chunks:list,batch_size:int=100):
+    async def insert_many_chunks(self,chunks:list,batch_size:int=96):
         async with self.db_client() as session:
             async with session.begin():
 
@@ -54,7 +54,7 @@ class ChunkDataModel(BaseDataModel):
 
         return result.rowcount()
 
-    async def get_project_chunks(self,project_id:int, page_no :int=1 ,page_size:int =100):
+    async def get_project_chunks(self,project_id:int, page_no :int=1 ,page_size:int =96):
             async with self.db_client() as session:
                 query =select(DataChunk).where(DataChunk.chunk_project_id == project_id).offset((page_no -1) * page_size).limit(page_size)
                 result=await session.execute(query)
@@ -65,7 +65,7 @@ class ChunkDataModel(BaseDataModel):
     async def get_total_chunks_count(self ,project_id :int):
         total_count =0
         async with self.db_client() as session:
-                query =select(func.count(DataChunk.chunk_id).where(DataChunk.chunk_project_id == project_id))
+                query =select(func.count(DataChunk.chunk_id)).where(DataChunk.chunk_project_id == project_id)
                 result=await session.execute(query)
                 total_count =result.scalar()
 
