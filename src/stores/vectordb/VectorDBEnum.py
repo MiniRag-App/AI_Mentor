@@ -1,15 +1,15 @@
 from enum import Enum
 
-class VectorDBEnum(Enum):
+class VectorDBEnums(Enum):
     QDRANT ='QDRANT'
     PGVECTOR ='PGVECTOR'
 
 
-class DistanceMethodEnum(Enum):
+class DistanceMethodEnums(Enum):
     COSINE ='cosine'
     DOT ='dot'
 
-class  PGvectorTableSchemaEnums(Enum):
+class  PgVectorTableSchemeEnums(Enum):
     ID = 'id'
     TEXT ='text'
     VECTOR ='vector'
@@ -17,10 +17,10 @@ class  PGvectorTableSchemaEnums(Enum):
     METADATA='metadata'
     _PREFIX ='pgvector'
 
-class PGvectorDistanceMethodsEnum(Enum):
+class PgVectorDistanceMethodEnums(Enum):
     COSINE ='vector_cosine_ops'
     DOT ='vector_l2_ops'
 
-class PGVectorIndexTypeEnum(Enum):
+class PgVectorIndexTypeEnums(Enum):
     HNSW='hnsw'
     IVFFLAT = "ivfflat"

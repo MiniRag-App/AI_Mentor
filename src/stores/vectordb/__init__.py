@@ -1,2 +1,3 @@
 from .providers.QdrantDBProvider import QdrantDBProvider
 from .VectorDBProviderFactory import VectorDBProviderFactory
+from .VectorDBInterface import VecotrDBInterface

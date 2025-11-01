@@ -19,7 +19,7 @@ nlp_router = APIRouter(
 @nlp_router.post("/index/push/{project_id}")
 async def index_project(request: Request, project_id: int, push_request: PushRequest):
 
-    project_model = await ProjectDataModel.create_instance(
+    project_model = await  ProjectDataModel.create_instance(
         db_client=request.app.db_client
     )
 
@@ -35,7 +35,7 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "signal": ResponseSignals.PROJEFT_NOT_FOUND.value
+                "signal": ResponseSignals.PROJECT_NOT_FOUND_ERROR.value
             }
         )
     
@@ -43,26 +43,26 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
         vectordb_client=request.app.vectordb_client,
         generation_client=request.app.generation_client,
         embedding_client=request.app.embedding_client,
-        template_parser =request.app.template_parser
+        template_parser=request.app.template_parser,
     )
-    
-    # creat collection if not exist
-    collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
-    _ =await request.app.vectordb_client.create_collection(
-                                                        collection_name =collection_name,
-                                                        embedding_size=request.app.embedding_client.embedding_size,
-                                                        do_reset=push_request.do_reset,
-                                                        )
-    
-
-    # setup chunks 
-    total_chunks_count =await chunk_model.get_total_chunks_count(project_id=project.project_id)
-    pbar = tqdm(total=total_chunks_count, desc="Vector Indexing", position=0)
 
     has_records = True
     page_no = 1
     inserted_items_count = 0
     idx = 0
+
+    # create collection if not exists
+    collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
+
+    _ = await request.app.vectordb_client.create_collection(
+        collection_name=collection_name,
+        embedding_size=request.app.embedding_client.embedding_size,
+        do_reset=push_request.do_reset,
+    )
+
+    # setup batching
+    total_chunks_count = await chunk_model.get_total_chunks_count(project_id=project.project_id)
+    pbar = tqdm(total=total_chunks_count, desc="Vector Indexing", position=0)
 
     while has_records:
         page_chunks = await chunk_model.get_project_chunks(project_id=project.project_id, page_no=page_no)
@@ -73,16 +73,12 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
             has_records = False
             break
 
-        chunks_ids = [c.chunk_id for c in page_chunks]
+        chunks_ids =  [ c.chunk_id for c in page_chunks ]
         idx += len(page_chunks)
         
-        if len(chunks_ids) == 0 or not chunks_ids:
-            print("chunks id is equal None")
-            
         is_inserted = await nlp_controller.index_into_vector_db(
             project=project,
             chunks=page_chunks,
-            do_reset=push_request.do_reset,
             chunks_ids=chunks_ids
         )
 
@@ -90,10 +86,10 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
-                    "signal": ResponseSignals.INSERT_INOT_VECTOR_DB_ERROR.value
+                    "signal": ResponseSignals.INSERT_INTO_VECTORDB_ERROR.value
                 }
             )
-        await asyncio.sleep(2)  
+
         pbar.update(len(page_chunks))
         inserted_items_count += len(page_chunks)
         

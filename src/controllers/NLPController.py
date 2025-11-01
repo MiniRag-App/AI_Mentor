@@ -35,8 +35,7 @@ class NLPController(BaseController):
 
 
     async def index_into_vector_db(self, project: Project, chunks: List[DataChunk],
-                                   chunks_ids: List[int], 
-                                   do_reset: bool = False):
+                                   chunks_ids: List[int]):
         
         # step1: get collection name
         collection_name = self.create_collection_name(project_id=project.project_id)
@@ -51,7 +50,6 @@ class NLPController(BaseController):
         _ = await self.vectordb_client.create_collection(
             collection_name=collection_name,
             embedding_size=self.embedding_client.embedding_size,
-            do_reset=do_reset,
         )
 
         # step4: insert into vector db
@@ -60,7 +58,7 @@ class NLPController(BaseController):
             texts=texts,
             metadata=metadata,
             vectors=vectors,
-            record_id =chunks_ids
+            record_ids=chunks_ids
         )
 
         return True
