@@ -54,9 +54,15 @@ async def lifespan(app:FastAPI):
 
 
     yield
-    # when app shutdown
-    app.db_engine.dispose()
-    await app.vectordb_client.disconnect()
+    try:
+           await app.db_engine.dispose()
+    except Exception as e:
+            print(f"Error disposing DB engine: {e}")
+
+    try:
+            await app.vectordb_client.disconnect()
+    except Exception as e:
+            print(f"Error disconnecting vector DB: {e}")
 
     
 

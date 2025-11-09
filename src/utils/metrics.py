@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 
 # define some constants before constructing Minddleware
-REQUEST_COUNT =Counter('http_requests_total','Total HTTP Requests',['methods','status','endpoint'])
+REQUEST_COUNT =Counter('http_requests_total','Total HTTP Requests',['method','status','endpoint'])
 REQUEST_LATENCY =Histogram('http_request_duration_seconds','HTTP Request Latency',['method','endpoint'])
 
 
@@ -19,7 +19,7 @@ class PrometheusMeddileware(BaseHTTPMiddleware):
         duration =time.time() - start_time 
         endpoint =request.url.path
 
-        REQUEST_COUNT.labels(method =request.method ,endpoint =endpoint ,status =request.status_code).inc()
+        REQUEST_COUNT.labels(method =request.method ,endpoint =endpoint ,status =response.status_code).inc()
         REQUEST_LATENCY.labels(method =request.method ,endpoint =endpoint ).observe(duration)
 
         return response 
