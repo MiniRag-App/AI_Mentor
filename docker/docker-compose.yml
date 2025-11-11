@@ -74,23 +74,24 @@ services:
 
 
   # Prometheus Monitoring
-  promethues:
-    image : prom/prometheus:v3.7.1
-    container_name: promethues
-    ports: 
-     - "9090:9090"
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
     volumes:
-      - promethues_data:/promethues
-      - ./promethues/promethues.yml:/etc/promethues/promethues.yml
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - backend
     restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'  # ✅ Enables /-/reload 
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+
     
 
 
@@ -105,12 +106,38 @@ services:
     env_file:
       - ./env/.env.grafana
     depends_on:
-      - promethues
+      - prometheus
+      - loki
     networks:
       - backend
     restart: always
 
+   # Loki (Log Aggregation)
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+      - ./Loki/loki-config.yaml:/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - backend
+    restart: always
 
+  # Promtail (Log Collector for Loki)
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: promtail
+    volumes:
+      - /var/log:/var/log
+      - /etc/hosts:/etc/hosts
+      - ./promtail/promtail-config.yaml:/etc/promtail/config.yaml
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - backend
+    restart: always
 
   # Node Exporter for system metrics
   node-exporter:
@@ -157,8 +184,9 @@ volumes:
   fastapi_data:
   pgvector:
   grafana_data:
-  promethues_data:
+  prometheus_data:
   qdrant_data:
+  loki_data:
 
 
 
