@@ -1,7 +1,7 @@
 from qdrant_client import models, QdrantClient
 from ..VectorDBInterface import VecotrDBInterface
-from ..VectorDBEnum import DistanceMethodEnum
-from models import RetrivedDocuments
+from ..VectorDBEnum import DistanceMethodEnums
+from models import RetrievedDocument
 import logging
 from typing import List
 import time
@@ -11,57 +11,53 @@ import shutil
 
 class QdrantDBProvider(VecotrDBInterface):
 
-    def __init__(self, db_path: str, distance_method: str):
+    def __init__(self,db_client: str, distance_methods :str = None ,default_vector_size :int =786 ,index_threshold :int =100):
 
         self.client = None
-        self.db_path = db_path
-        self.distance_method = None
+        self.db_client =db_client
+        self.distance_method = distance_methods
+        self.default_vector_size =default_vector_size
+        self.index_threshold =index_threshold
 
-        if distance_method == DistanceMethodEnum.COSINE.value:
+        if distance_methods == DistanceMethodEnums.COSINE.value:
             self.distance_method = models.Distance.COSINE
-        elif distance_method == DistanceMethodEnum.DOT.value:
+        elif distance_methods == DistanceMethodEnums.DOT.value:
             self.distance_method = models.Distance.DOT
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('uvicorn')
 
-    def connect(self):
-        self.client = QdrantClient(path=self.db_path)
+    async def connect(self):
+        self.client = QdrantClient(path=self.db_client)
 
-    def disconnect(self):
+    async def disconnect(self):
         self.client = None
 
-    def is_collection_existed(self, collection_name: str) -> bool:
+    async def is_collection_existed(self, collection_name: str) -> bool:
+        if self.client is None :
+            print("qdrant client is None")
         return self.client.collection_exists(collection_name=collection_name)
     
-    def list_all_collections(self) -> List:
+    async def list_all_collections(self) -> List:
         return self.client.get_collections()
     
-    def get_collection_info(self, collection_name: str) -> dict:
+    async def get_collection_info(self, collection_name: str) -> dict:
         return self.client.get_collection(collection_name=collection_name)
     
-    def delete_collection(self, collection_name: str):
-            # Delete via Qdrant API
-            print(f"[DEBUG] Attempting to delete collection: {collection_name}")
-            if self.is_collection_existed(collection_name):
-                self.client.delete_collection(collection_name=collection_name)
-
-            # Fallback: Remove folder from disk if it still exists
-            collection_path = os.path.join(self.db_path, "collection", collection_name)
-
-            if os.path.exists(collection_path):
-                print(f"[DEBUG] Manually removing collection folder: {collection_path}")
-                shutil.rmtree(collection_path)
+    async def delete_collection(self, collection_name: str):
+        if await self.is_collection_existed(collection_name):
+            self.logger.info(f"Deleting collection: {collection_name}")
+            return self.client.delete_collection(collection_name=collection_name)
 
 
 
-    def create_collection(self, collection_name: str, 
+    async def create_collection(self, collection_name: str, 
                                 embedding_size: int,
                                 do_reset: bool = False):
        
         if do_reset:
-            _ = self.delete_collection(collection_name=collection_name)
-            print(f"collection deleted------------{collection_name}---------")
+            _ = await self.delete_collection(collection_name=collection_name)
             time.sleep(0.2)  # Give Qdrant time to remove the collection
+            
 
             _ = self.client.create_collection(
                 collection_name=collection_name,
@@ -72,7 +68,8 @@ class QdrantDBProvider(VecotrDBInterface):
             )
             print(f"collection created-------{collection_name}--------------")
 
-        if not self.is_collection_existed(collection_name=collection_name):  # Always (re)create the collection after deletion
+        if not await self.is_collection_existed(collection_name=collection_name):  # Always (re)create the collection after deletion
+            self.logger.info(f'creating new qdran collection {collection_name}')
             _ = self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=models.VectorParams(
@@ -83,7 +80,7 @@ class QdrantDBProvider(VecotrDBInterface):
             print(f"collection created-------{collection_name}--------------")
         return True
     
-    def insert_one(self, collection_name: str, text: str, vector: list,
+    async def insert_one(self, collection_name: str, text: str, vector: list,
                          metadata: dict = None, 
                          record_id: str = None):
         
@@ -110,7 +107,7 @@ class QdrantDBProvider(VecotrDBInterface):
 
         return True
     
-    def insert_many(self, collection_name: str, texts: list, 
+    async def insert_many(self, collection_name: str, texts: list, 
                           vectors: list, metadata: list = None, 
                           record_ids: list = None, batch_size: int = 50):
         
@@ -153,7 +150,7 @@ class QdrantDBProvider(VecotrDBInterface):
 
         return True
         
-    def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
 
         results = self.client.search(
             collection_name=collection_name,
@@ -166,7 +163,7 @@ class QdrantDBProvider(VecotrDBInterface):
         
 
         return [
-            RetrivedDocuments(**{
+            RetrievedDocument(**{
                 "score":doc.score,
                 "text":doc.payload['text']
             })

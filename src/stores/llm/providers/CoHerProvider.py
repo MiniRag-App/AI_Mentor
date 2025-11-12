@@ -2,7 +2,7 @@ from ..LLMInterface import LLMInterface
 from ..LLMEnum import CoherEnum, DocumentTypeEnum 
 import cohere
 import logging
-  
+from typing import List ,Union
 
 
 class CoHerProvider(LLMInterface):
@@ -74,10 +74,14 @@ class CoHerProvider(LLMInterface):
             "content":self.proecess_text(prompt)
         }
 
-    def embed_text(self,text:str,document_type:str =None):
+    def embed_text(self,text:Union[str,List[str]],document_type:str =None):
+        '''making fun to be able to emebed single text or list of texts'''
          
         if self.client is None:
             self.logger.error('CoHer client was not set')
+        
+        if isinstance(text,str):
+            text =[text]
 
         if  self.embedding_model_id is None:
             self.logger.error(' embedding model id was not set')
@@ -89,7 +93,7 @@ class CoHerProvider(LLMInterface):
 
         response =self.client.embed(
             model =self.embedding_model_id,
-            texts =[self.proecess_text(text)],
+            texts =[self.proecess_text(t) for t in text],
             input_type=input_type,
             embedding_types=["float"],
         )    
@@ -99,7 +103,7 @@ class CoHerProvider(LLMInterface):
             self.logger.error('error while embedding with coher ') 
             return None
         
-        return response.embeddings.float[0]
+        return [f for f in response.embeddings.float]
 
 
         

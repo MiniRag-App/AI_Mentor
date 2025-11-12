@@ -11,7 +11,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 logger =logging.getLogger('uvicorn.error')
 
 class ProcessController(BaseController):
-    def __init__(self,project_id:str):
+    def __init__(self,project_id:int):
         super().__init__()
         self.project_id =project_id
         self.project_path =ProjectController().get_project_path(project_id=project_id)
@@ -50,6 +50,11 @@ class ProcessController(BaseController):
             return docs
         return None
     
+    def get_clean_text(self,text):
+        return text.replace('\x00', '').strip()
+
+
+
     def get_file_chunks(self,file_content,chunk_size=100,overlap_size=20):
         spliter =RecursiveCharacterTextSplitter(
               chunk_size=chunk_size,
@@ -58,7 +63,7 @@ class ProcessController(BaseController):
         )
         
         file_content_text=[
-            rec.page_content
+            self.get_clean_text(rec.page_content)
             for rec in file_content
         ]
 
