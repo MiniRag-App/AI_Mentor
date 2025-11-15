@@ -43,7 +43,7 @@ services:
     ports:
      - "5432:5432"
     volumes:
-      - pgvector:/var/lib/postgresql/data
+      - pgvector:/var/lib/postgresql
 
     env_file:
       - ./env/.env.postgres
