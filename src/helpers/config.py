@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY :str =None
     COHER_API_KEY:str =None
     GROQ_API_KEY :str =None
+    Gemini_API_KEY:str=None
 
     OPENAI_BASE_URL_LITERAL :Optional[List[str]] = None
     OPENAI_BASE_URL:str= None

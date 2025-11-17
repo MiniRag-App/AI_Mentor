@@ -9,5 +9,6 @@ class PushRequest(BaseModel):
 
 class SearchRequest(BaseModel):
       text:str
+      job_desc:str
       limit:Optional[int] = 5
 

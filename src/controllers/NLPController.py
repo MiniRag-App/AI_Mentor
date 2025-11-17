@@ -2,7 +2,6 @@ from .BaseController import BaseController
 from models.db_schemes import Project,DataChunk
 from typing import List
 from stores import DocumentTypeEnum
-import time 
 import json
 
 class NLPController(BaseController):
@@ -106,7 +105,7 @@ class NLPController(BaseController):
         return result
     
 
-    async def answer_rag_question(self,project:Project ,query:str ,limit:int=10):
+    async def answer_rag_question(self, project: Project, query: str, job_desc: str, limit: int = 10):
 
         print("[DEBUG] Step 1: Retrieving relevant documents...")
         retrieved_documents = await self.search_vectordb_collection(project=project, text=query, limit=limit)
@@ -126,31 +125,35 @@ class NLPController(BaseController):
                 key='Document_prompt',
                 vars={
                     "doc_num": idx,
-                    "chunk_text":self.generation_client.proecess_text(doc.text)
-                })
+                    "chunk_text": self.generation_client.proecess_text(doc.text)
+                }
+            )
             for idx, doc in enumerate(retrieved_documents)
         ])
 
-        print("[DEBUG] Step 4: Constructing footer prompt...")
+        print("[DEBUG] Step 4: Constructing Job Description prompt...")
+        jobdesc_prompt = self.template_parser.get_prompt_value(
+            group='rag',
+            key='JobDesc_prompt',
+            vars={"job_description": job_desc}
+        )
 
+        print("[DEBUG] Step 5: Constructing footer prompt...")
+        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt', vars={"query": query})
 
-        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt',vars={"query":query})
-
-        print("[DEBUG] Step 5: Constructing chat history...")
-        chat_histoy = [
+        print("[DEBUG] Step 6: Constructing chat history...")
+        chat_history = [
             self.generation_client.consturct_prompt(
                 prompt=system_prompt,
                 role=self.generation_client.enums.SYSTEM.value
             )
         ]
 
-        print("[DEBUG] Step 6: Constructing full prompt...")
-        full_prompt = '\n\n'.join([document_prompts, footer_prompt])
+        print("[DEBUG] Step 7: Constructing full prompt...")
+        full_prompt = '\n\n'.join([document_prompts, jobdesc_prompt, footer_prompt])
 
-        print("[DEBUG] Step 7: Calling LLM generate_text...")
-        answer = self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_histoy)
-        print("[DEBUG] Step 8: LLM response received.")
+        print("[DEBUG] Step 8: Calling LLM generate_text...")
+        answer = self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_history)
+        print("[DEBUG] Step 9: LLM response received.")
 
-        return answer, full_prompt, chat_histoy
-
-
+        return answer, full_prompt, chat_history

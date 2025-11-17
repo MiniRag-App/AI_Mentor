@@ -52,7 +52,7 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
     idx = 0
 
     # create collection if not exists
-    collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
+    collection_name = nlp_controller.create_collection_name(project_id=project.project_id,type=push_request.type)
 
     _ = await request.app.vectordb_client.create_collection(
         collection_name=collection_name,
@@ -79,7 +79,8 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
         is_inserted = await nlp_controller.index_into_vector_db(
             project=project,
             chunks=page_chunks,
-            chunks_ids=chunks_ids
+            chunks_ids=chunks_ids,
+            type=push_request.type
         )
 
         if not is_inserted:
@@ -198,6 +199,7 @@ async def answer_rag(request:Request ,project_id:int ,search_request:SearchReque
         answer, full_prompt, chat_histoy = await nlp_controller.answer_rag_question(
             project=project,
             query=search_request.text,
+            job_desc =search_request.job_desc,
             limit=search_request.limit
         )
         logger.info("[DEBUG] answer_rag_question completed.")
@@ -224,9 +226,7 @@ async def answer_rag(request:Request ,project_id:int ,search_request:SearchReque
     return JSONResponse(
         content={
             "signal": ResponseSignals.RAG_ANSWER_SUCCESS.value,
-            "answer": answer,
-            "full_prompt": full_prompt,
-            "chat_history": chat_histoy
+            "answer": answer
         }
     )
     
