@@ -52,7 +52,7 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
     idx = 0
 
     # create collection if not exists
-    collection_name = nlp_controller.create_collection_name(project_id=project.project_id,type=push_request.type)
+    collection_name = nlp_controller.create_collection_name(project_id=project.project_id)
 
     _ = await request.app.vectordb_client.create_collection(
         collection_name=collection_name,
@@ -79,8 +79,7 @@ async def index_project(request: Request, project_id: int, push_request: PushReq
         is_inserted = await nlp_controller.index_into_vector_db(
             project=project,
             chunks=page_chunks,
-            chunks_ids=chunks_ids,
-            type=push_request.type
+            chunks_ids=chunks_ids
         )
 
         if not is_inserted:
@@ -150,7 +149,7 @@ async def search_index(request:Request ,project_id:int ,search_request:SearchReq
     )
     
 
-    results =await nlp_controller.search_vectordb_collection(project =project,text =search_request.text ,limit =search_request.limit)
+    results =await nlp_controller.search_vectordb_collection(project =project,query =search_request.query ,limit =search_request.limit)
 
     
     if not results:
@@ -167,7 +166,6 @@ async def search_index(request:Request ,project_id:int ,search_request:SearchReq
         content={
             "signal": ResponseSignals.VECTORDB_SEARCH_SUCCESS.value,
             "results":[ res.dict()   for res in results]
-
         }
     )
 

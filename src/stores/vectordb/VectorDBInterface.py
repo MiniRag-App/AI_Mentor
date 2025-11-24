@@ -49,5 +49,5 @@ class VecotrDBInterface(ABC):
     
 
     @abstractmethod
-    def search_by_vector(self,collection_name:str ,vector:list ,limit :int) -> List [RetrievedDocument]:
+    def search_by_vector(self,collection_name:str ,vector:list ,limit :int,query_type:str) -> List [RetrievedDocument]:
         pass

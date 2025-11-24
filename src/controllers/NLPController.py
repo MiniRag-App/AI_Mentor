@@ -3,6 +3,7 @@ from models.db_schemes import Project,DataChunk
 from typing import List
 from stores import DocumentTypeEnum
 import json
+from models.enumrations.QueryEnum import QueryEnum
 
 class NLPController(BaseController):
     def __init__(self,generation_client, embedding_client, vectordb_client,template_parser):
@@ -13,6 +14,28 @@ class NLPController(BaseController):
         self.vectordb_client =vectordb_client
         self.template_parser =template_parser
 
+    def classify_question(self,query: str) -> str:
+        question_lower = query.lower()
+
+        # Priority 1: Comparison (needs both)
+        comparison_keywords = ['missing', 'lack', 'gap', 'match', 'score','imporve' 
+                            'compare', 'qualify', 'fit', 'rate', 'eligible']
+        if any(keyword in question_lower for keyword in comparison_keywords):
+            return QueryEnum.BOTH.value
+        
+        # Priority 2: Self-reference (CV only)
+        self_keywords = ['my ', 'i have', 'i worked', 'i studied', 'me ']
+        if any(keyword in question_lower for keyword in self_keywords):
+            return QueryEnum.CV.value
+        
+        # Priority 3: Job-reference (JD only)
+        job_keywords = ['required', 'requirement', 'they want', 'job needs',
+                    'looking for', 'responsibilities', 'duties', 'must have']
+        if any(keyword in question_lower for keyword in job_keywords):
+            return QueryEnum.JD.value
+        
+        # Default: General (both, let vectors decide)
+        return QueryEnum.BOTH.value
 
     def create_collection_name(self ,project_id:int):
         return f"collection_{self.vectordb_client.default_vector_size}_{project_id}".strip()
@@ -62,9 +85,11 @@ class NLPController(BaseController):
 
         return True
     
-    async def search_vectordb_collection(self,project:Project ,text:str, limit:int):
+    async def search_vectordb_collection(self,project:Project ,query:str, limit:int):
+        # step:get query type
+        query_type =self.classify_question(query)
          
-        # step1: get collection name 
+        # step2: get collection name 
         collection_name =self.create_collection_name(project_id=project.project_id)
 
 
@@ -72,7 +97,7 @@ class NLPController(BaseController):
         query_vector =None 
 
         vectors =self.embedding_client.embed_text(
-            text =text ,
+            text =query ,
             document_type=DocumentTypeEnum.QUERY.value
         )
 
@@ -91,7 +116,8 @@ class NLPController(BaseController):
         result = await self.vectordb_client.search_by_vector(
              collection_name = collection_name,
              vector = query_vector, 
-             limit =limit
+             limit =limit,
+             query_type =query_type
         )
 
         if not result:

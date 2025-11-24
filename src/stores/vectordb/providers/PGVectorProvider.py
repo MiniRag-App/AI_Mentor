@@ -6,6 +6,7 @@ from typing import List
 from models.db_schemes import RetrievedDocument
 from sqlalchemy.sql import text as sql_text
 import json
+from models.enumrations.QueryEnum import QueryEnum
 
 class PGVectorProvider( VecotrDBInterface):
 
@@ -267,7 +268,7 @@ class PGVectorProvider( VecotrDBInterface):
 
         return True
     
-    async def search_by_vector(self, collection_name: str, vector: list, limit: int):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int,query_type:str):
 
         is_collection_existed = await self.is_collection_existed(collection_name=collection_name)
         if not is_collection_existed:
@@ -277,12 +278,31 @@ class PGVectorProvider( VecotrDBInterface):
         vector = "[" + ",".join([ str(v) for v in vector ]) + "]"
         async with self.db_client() as session:
             async with session.begin():
-                search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
-                                      f' FROM {collection_name}'
-                                      ' ORDER BY score DESC '
-                                      f'LIMIT {limit}'
-                                      )
-                
+                # BUILD QUERY BASED ON query_type
+                if query_type == QueryEnum.CV.value :
+                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
+                                        f' FROM {collection_name} '
+                                        'join chunks as ch '
+                                        f'on ch.chunk_id = {collection_name}.chunk_id '
+                                        f"where ch.chunk_doc_type ='{QueryEnum.CV.value}'"
+                                        ' ORDER BY score DESC '
+                                        f'LIMIT {limit}'
+                                        )
+                elif query_type ==QueryEnum.JD.value:
+                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
+                                        f' FROM {collection_name} '
+                                        'join chunks as ch '
+                                        f'on ch.chunk_id = {collection_name}.chunk_id '
+                                        f"where ch.chunk_doc_type ='{QueryEnum.JD.value}'"
+                                        ' ORDER BY score DESC '
+                                        f'LIMIT {limit}'
+                                        )
+                else:
+                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
+                                        f' FROM {collection_name} '
+                                        ' ORDER BY score DESC '
+                                        f'LIMIT {limit}'
+                                        )
                 result = await session.execute(search_sql, {"vector": vector})
 
                 records = result.fetchall()

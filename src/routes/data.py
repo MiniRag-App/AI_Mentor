@@ -1,4 +1,4 @@
-from fastapi import APIRouter,UploadFile,status,Request
+from fastapi import APIRouter,UploadFile,status,Request,Form
 from helpers.config import Settings,get_settings
 from fastapi.responses import JSONResponse
 from controllers import DataController,ProjectController,ProcessController,NLPController
@@ -22,7 +22,7 @@ data_router =APIRouter(
 app_settings =get_settings()
 
 @data_router.post('/upload/{project_id}')
-async def upload_data(request:Request,project_id:int,file:UploadFile):
+async def upload_data(request:Request,project_id:int,file:UploadFile,doc_type:str =Form(...)):
        # store project_id in mongodb
        project_model =await ProjectDataModel.create_instance(
               db_client =request.app.db_client
@@ -77,6 +77,7 @@ async def upload_data(request:Request,project_id:int,file:UploadFile):
               asset_project_id =project.project_id,
               asset_type=AssetTypeEnum.ASSET_TYPE.value,
               asset_name =file_id,
+              asset_doc_type =doc_type.upper(),
               asset_size =os.path.getsize(file_path)
        )
        asset_record =await asset_model.create_asset(asset=asset)
@@ -105,16 +106,15 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
                      embedding_client=request.app.embedding_client,
                      template_parser =request.app.template_parser
                      )
-       
+       asset_model =await AssetModel.create_instance(
+              db_client=request.app.db_client
+              )
 
        project =await project_model.get_project_or_create_one(project_id=project_id)
 
        project_files_ids={}
 
        if process_request.file_id:
-              asset_model =await AssetModel.create_instance(
-              db_client=request.app.db_client
-              )
               asset_record =await asset_model.get_asset_record(
                      asset_project_id=project.project_id,
                      asset_name =process_request.file_id
@@ -132,11 +132,7 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
               project_files_ids={
                      asset_record.asset_id:asset_record.asset_name
               }
-       else:
-              asset_model =await AssetModel.create_instance(
-              db_client=request.app.db_client
-              )
-              
+       else:   
               project_files_list =await asset_model.get_all_project_assets(
                      asset_project_id=project.project_id,
                      asset_type=AssetTypeEnum.ASSET_TYPE.value
@@ -175,6 +171,11 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
        no_files=0
 
        for asset_id,file_id in project_files_ids.items():
+
+              # GET THE ASSET RECORD TO KNOW DOC_TYPE
+              asset_record = await asset_model.get_asset_record(asset_name =file_id,asset_project_id=project.project_id)  # ← ADD THIS
+              doc_type = asset_record.asset_doc_type  # ← GET doc_type
+
               file_content =process_controller.get_file_content(file_id=file_id)
 
               if file_content is None:
@@ -205,6 +206,7 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
                      chunk_text=chunk.page_content,
                      chunk_order=i+1,
                      chunk_metadata=chunk.metadata,
+                     chunk_doc_type=doc_type,
                      chunk_project_id =project.project_id,
                      chunk_asset_id=asset_id
                      )
