@@ -1,4 +1,4 @@
-# min_rag
+# AI Mentor
 this is a minimal implementaion of the RAG model for question
 answering 
 
