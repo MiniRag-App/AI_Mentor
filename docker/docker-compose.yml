@@ -18,6 +18,27 @@ services:
     depends_on:
       pgvector:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
+  
+  ollama:
+    build : 
+      context: .
+      dockerfile: ollama/dockerfile
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes: 
+       - ollama_models:/root/.ollama
+    restart: always
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11434/api/tags || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
 
 
   # Nginx Servicve 
@@ -187,6 +208,7 @@ volumes:
   prometheus_data:
   qdrant_data:
   loki_data:
+  ollama_models:
 
 
 

@@ -1,0 +1,15 @@
+FROM ollama/ollama:0.13.1-rc0
+
+# Install curl for health checks
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy entrypoint script into container
+COPY ollama/entrypoint.sh /entrypoint.sh
+
+# Make it executable
+RUN chmod +x /entrypoint.sh
+
+# run explicitly with sh so incorrect shebang won't block startup
+ENTRYPOINT ["/entrypoint.sh"]
