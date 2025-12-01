@@ -3,10 +3,10 @@ from .ProjectController import ProjectController
 import os 
 from models import ProcessingEnum
 import logging
+from models.enumrations.QueryEnum import QueryEnum
 
 from langchain_community.document_loaders import PyMuPDFLoader,TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
+from controllers.TextSpliterController import TextSpliterController
 
 logger =logging.getLogger('uvicorn.error')
 
@@ -55,26 +55,15 @@ class ProcessController(BaseController):
 
 
 
-    def get_file_chunks(self,file_content,chunk_size=100,overlap_size=20):
-        spliter =RecursiveCharacterTextSplitter(
-              chunk_size=chunk_size,
-              chunk_overlap=overlap_size,
-              length_function =len
-        )
+    def get_file_chunks(self,file_content,project_id:int, asset_id:int,doc_type:str):
         
         file_content_text=[
             self.get_clean_text(rec.page_content)
             for rec in file_content
         ]
-
-        file_content_metadata =[
-            rec.metadata
-            for rec in file_content
-        ]
-
-        chunks =spliter.create_documents(
-            file_content_text,
-            metadatas=file_content_metadata
-        )
-       
+        text ="\n".join(file_content_text)
+        
+        TextSpliter =TextSpliterController(doc_type=doc_type)
+        chunks =TextSpliter.split_text_chunks(text =text , project_id= project_id ,asset_id=asset_id)
+        print("len(file_chunks) =",len(chunks))
         return chunks

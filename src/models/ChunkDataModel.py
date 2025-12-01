@@ -52,7 +52,7 @@ class ChunkDataModel(BaseDataModel):
                   result = await session.execute(query)
             await session.commit()
 
-        return result.rowcount()
+        return result.rowcount
 
     async def get_project_chunks(self,project_id:int, page_no :int=1 ,page_size:int =96):
             async with self.db_client() as session:
