@@ -12,7 +12,7 @@ class DataChunk(SQLAlchemyBase):
 
     chunk_id = Column(Integer, primary_key=True, autoincrement=True)
     chunk_uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
-
+    
     chunk_text = Column(String, nullable=False)
     chunk_metadata = Column(JSONB, nullable=True)
     chunk_order = Column(Integer, nullable=False)
@@ -34,3 +34,4 @@ class DataChunk(SQLAlchemyBase):
 class RetrievedDocument(BaseModel):
     text: str
     score: float
+    doc_type:str

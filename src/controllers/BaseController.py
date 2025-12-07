@@ -11,6 +11,7 @@ class BaseController:
             self.file_dir =os.path.join(self.base_dir,'assets/files')
 
 
+
             self.database_dir =os.path.join(
                   self.base_dir,
                   'assets/vectore_db'

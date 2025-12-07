@@ -92,8 +92,8 @@ async def upload_data(request:Request,project_id:int,file:UploadFile,doc_type:st
 
 @data_router.post('/process/{project_id}')
 async def process_endpoint(request:Request,project_id:int,process_request:ProcessRequest):
-       chunk_size =process_request.chunk_size
-       overlap =process_request.overlap
+       # chunk_size =process_request.chunk_size
+       # overlap =process_request.overlap
        do_reset =process_request.do_reset
 
        project_model =await ProjectDataModel.create_instance(
@@ -183,9 +183,10 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
                      continue
               
               file_chunks =process_controller.get_file_chunks(
-                     chunk_size =chunk_size,
-                     overlap_size=overlap,
-                     file_content =file_content
+                     file_content =file_content,
+                     project_id=project_id,
+                     asset_id=asset_id,
+                     doc_type =doc_type
                      )
               
               if file_chunks is None or len(file_chunks) ==0:
@@ -198,23 +199,11 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
                      
                             )
               
-              # store file chunks in mongodb
+              # store file chunks in postgres
        
-              
-              file_chunks_reco =[
-                     DataChunk(
-                     chunk_text=chunk.page_content,
-                     chunk_order=i+1,
-                     chunk_metadata=chunk.metadata,
-                     chunk_doc_type=doc_type,
-                     chunk_project_id =project.project_id,
-                     chunk_asset_id=asset_id
-                     )
-                     for i,chunk in enumerate(file_chunks)
-              ]
 
               no_chunks +=await chunk_model.insert_many_chunks(
-                     chunks=file_chunks_reco,
+                     chunks=file_chunks
               )
               no_files +=1
 
