@@ -3,9 +3,11 @@ from .ProjectController import ProjectController
 import os 
 from models import ProcessingEnum
 import logging
+import re
 
-from langchain_community.document_loaders import PyMuPDFLoader,TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader,TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from models.db_schemes import DataChunk
 
 
 logger =logging.getLogger('uvicorn.error')
@@ -39,7 +41,7 @@ class ProcessController(BaseController):
             return TextLoader(file_path=file_path,encoding='utf-8')
         
         if file_ext ==ProcessingEnum.PDF.value:
-            return PyMuPDFLoader(file_path=file_path)
+            return PyPDFLoader(file_path=file_path)
         
         return None
     
@@ -50,31 +52,41 @@ class ProcessController(BaseController):
             return docs
         return None
     
-    def get_clean_text(self,text):
-        return text.replace('\x00', '').strip()
+    def get_clean_text(self, text):
+        # Remove empty line 
+        text = re.sub(r'\n\s*\n', '\n', text)
+        # Replace multiple spaces with a single space
+        text = re.sub(r'[ \t]+', ' ', text)
+        return text.strip()
 
 
 
-    def get_file_chunks(self,file_content,chunk_size=100,overlap_size=20):
+
+    def get_file_chunks(self, file_content, asset_id, doc_type: str, chunk_size=1000, overlap_size=200):
+        
         spliter =RecursiveCharacterTextSplitter(
               chunk_size=chunk_size,
               chunk_overlap=overlap_size,
-              length_function =len
+              length_function =len,
+              add_start_index=True,
+
         )
+        # clean text befor split it 
+        for doc in file_content:
+            doc.page_content =self.get_clean_text(doc.page_content)
+
+        chunks =spliter.split_documents(file_content)
         
-        file_content_text=[
-            self.get_clean_text(rec.page_content)
-            for rec in file_content
+        file_chunks = [
+            DataChunk(
+                chunk_text=chunk.page_content,
+                chunk_metadata=chunk.metadata,
+                chunk_order=idx,
+                chunk_project_id=self.project_id,
+                chunk_asset_id=asset_id,
+                chunk_doc_type=doc_type
+            )
+            for idx, chunk in enumerate(chunks)
         ]
-
-        file_content_metadata =[
-            rec.metadata
-            for rec in file_content
-        ]
-
-        chunks =spliter.create_documents(
-            file_content_text,
-            metadatas=file_content_metadata
-        )
-       
-        return chunks
+        
+        return file_chunks

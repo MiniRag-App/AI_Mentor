@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import base,data,nlp,drop_try
+from routes import base,data,nlp,drop_try,eval
 from helpers import Settings,get_settings
 from stores.llm import LLMProviderFactory
 from stores.vectordb import VectorDBProviderFactory
@@ -76,4 +76,5 @@ app.include_router(base.base_router)
 app.include_router(data.data_router)
 app.include_router(nlp.nlp_router)
 app.include_router(drop_try.drop_router)
+app.include_router(eval.eval_router)
 

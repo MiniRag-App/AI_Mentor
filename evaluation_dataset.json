@@ -1,0 +1,104 @@
+{
+  "Questions": [
+    {
+      "question": "What is the phone number mentioned in the CV?",
+      "query_type": "CV",
+      "ground_truth": "(+20) 1204787684"
+    },
+    {
+      "question": "What is the current degree that Shrouk Adel is pursuing?",
+      "query_type": "CV",
+      "ground_truth": "M.Sc. in Data Science"
+    },
+    {
+      "question": "What is the name of the university where Shrouk Adel is currently studying?",
+      "query_type": "CV",
+      "ground_truth": "Arab Academy for Science, Technology and Maritime Transport (AASTMT), Cairo"
+    },
+    {
+      "question": "What is the title of the job mentioned in the Job Description?",
+      "query_type": "JOB",
+      "ground_truth": "Artificial Intelligence (AI) Engineer"
+    },
+    {
+      "question": "What are the key responsibilities of the AI Engineer mentioned in the Job Description?",
+      "query_type": "JOB",
+      "ground_truth": "Design, develop, and implement AI models, machine learning algorithms, and deep learning solutions, train and fine-tune machine learning models, build and optimize AI-driven applications, develop and integrate AI models into cloud-based and edge computing environments, work with structured and unstructured data, collaborate with cross-functional teams, deploy AI models to production environments, research and stay up to date with the latest AI advancements, optimize AI models for efficiency, scalability, and real-time processing, ensure AI models adhere to ethical AI principles, fairness, bias mitigation, and responsible AI deployment"
+    },
+    {
+      "question": "What are the required skills and qualifications for the AI Engineer mentioned in the Job Description?",
+      "query_type": "JOB",
+      "ground_truth": "Bachelor\u2019s or Master\u2019s degree in Computer Science, Artificial Intelligence, Data Science, or a related field, proven experience in AI/ML model development, training, and deployment, proficiency in programming languages such as Python, R, or Java, hands-on experience with machine learning frameworks, strong understanding of deep learning, NLP, computer vision, reinforcement learning, and generative AI models, experience working with cloud platforms for AI model deployment, knowledge of big data technologies, experience with MLOps tools, strong analytical and problem-solving skills, excellent communication and teamwork skills"
+    },
+    {
+      "question": "Does Shrouk Adel have experience in AI/ML model development, training, and deployment?",
+      "query_type": "BOTH",
+      "ground_truth": "Yes, according to the CV, Shrouk Adel has experience in AI/ML model development, training, and deployment as an AI Engineer Intern at Singularity and as an AI Trainee at NTI"
+    },
+    {
+      "question": "Is Shrouk Adel proficient in programming languages such as Python, R, or Java?",
+      "query_type": "BOTH",
+      "ground_truth": "Yes, according to the CV, Shrouk Adel is proficient in Python"
+    },
+    {
+      "question": "Does Shrouk Adel have hands-on experience with machine learning frameworks?",
+      "query_type": "BOTH",
+      "ground_truth": "Yes, according to the CV, Shrouk Adel has hands-on experience with machine learning frameworks such as TensorFlow, PyTorch, Keras, and Scikit-Learn"
+    },
+    {
+      "question": "What is the name of the project where Shrouk Adel built an end-to-end RAG app for CV-JD matching, skill gap analysis, and personalized recommendations?",
+      "query_type": "CV",
+      "ground_truth": "AI Career Mentor"
+    },
+    {
+      "question": "What is the name of the company where Shrouk Adel worked as an AI Engineer Intern?",
+      "query_type": "CV",
+      "ground_truth": "Singularity"
+    },
+    {
+      "question": "What is the name of the university where Shrouk Adel completed their Bachelor\u2019s degree?",
+      "query_type": "CV",
+      "ground_truth": "Faculty of Engineering, Al-Azhar University, Cairo"
+    },
+    {
+      "question": "What is the title of the course that Shrouk Adel taught as an AI Instructor at NTI?",
+      "query_type": "CV",
+      "ground_truth": "Machine Learning"
+    },
+    {
+      "question": "What is the name of the company where Shrouk Adel worked as an AI Instructor (Part-time)?",
+      "query_type": "CV",
+      "ground_truth": "AMIT Learning"
+    },
+    {
+      "question": "What is the name of the project where Shrouk Adel fine-tuned Qwen2.5-1.5B model using LLaMA-Factory and LoRA for Arabic news extraction and translation?",
+      "query_type": "CV",
+      "ground_truth": "Fine_Tuning_Qwen2.5_1.5b_LLaMA_Factory"
+    },
+    {
+      "question": "What is the name of the project where Shrouk Adel built a RAG-based app recommending exercises via natural language?",
+      "query_type": "CV",
+      "ground_truth": "Fitness Assistant"
+    },
+    {
+      "question": "What is the name of the company where Shrouk Adel worked as an AI Trainee?",
+      "query_type": "CV",
+      "ground_truth": "NTI"
+    },
+    {
+      "question": "What are the skills that Shrouk Adel has according to the CV?",
+      "query_type": "CV",
+      "ground_truth": "Machine Learning & AI, Supervised/Unsupervised ML, Deep Learning, Time Series, Computer Vision, NLP, LLMs, Prompt Engineering, RAG Systems, Programming, Python, SQL, Data Visualization, Power BI, Matplotlib, Plotly, Seaborn, Databases, SQL Server, MySQL, PostgreSQL, Libraries/Frameworks, TensorFlow, PyTorch, Keras, Scikit-Learn, Pandas, NumPy, AI Tools, LangChain, LangGraph, Hugging Face, Ollama, Web/Deployment, Flask, FastAPI, Streamlit, Docker, Nginx, Cloud & DevOps, Microsoft Azure, CI/CD (GitHub Actions)"
+    },
+    {
+      "question": "What are the certificates that Shrouk Adel has according to the CV?",
+      "query_type": "CV",
+      "ground_truth": "Machine Learning Specialization, Neural Networks and Deep Learning, Improving Deep Neural Networks, Deep Learning for NLP, Intermediate SQL Queries, AI Training, Getting Started with Deep Learning"
+    },
+    {
+      "question": "What is the language proficiency of Shrouk Adel in Arabic and English?",
+      "query_type": "CV",
+      "ground_truth": "Arabic: Native, English: Very Good"
+    }
+  ]
+}

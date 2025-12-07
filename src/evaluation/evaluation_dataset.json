@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "Question": {
+      "properties": {
+        "question": {
+          "description": "The evaluation question to be asked",
+          "title": "Question",
+          "type": "string"
+        },
+        "query_type": {
+          "description": "Type of query: CV-only, JD-only, or Both",
+          "enum": [
+            "CV",
+            "JOB",
+            "BOTH"
+          ],
+          "title": "Query Type",
+          "type": "string"
+        },
+        "ground_truth": {
+          "description": "the correct answer based strictly on CV/JD , complete answer with all details ",
+          "title": "Ground Truth",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question",
+        "query_type",
+        "ground_truth"
+      ],
+      "title": "Question",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "Questions": {
+      "description": "List of evaluation questions",
+      "items": {
+        "$ref": "#/$defs/Question"
+      },
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "Questions"
+  ],
+  "title": "QuestionList",
+  "type": "object",
+  "Questions": [
+    {
+      "question": "What are my main strengths for this AI Engineer role based on my CV?",
+      "query_type": "BOTH",
+      "ground_truth": "Your main strengths for this AI Engineer role are exceptionally strong and directly aligned with what they're looking for. Your hands-on experience is a huge asset; your internship at Singularity involved designing and implementing the exact kind of AI agents and RAG systems mentioned in the job description. Furthermore, your personal projects, like the 'AI Career Mentor' and 'AR-EN Sales Agent,' demonstrate a complete end-to-end skill set, from development with FastAPI and LangChain to deployment on Azure using Docker and CI/CD, which perfectly matches their need for someone who can build, deploy, and maintain AI applications."
+    },
+    {
+      "question": "How well does my project experience, especially the AI Career Mentor, align with the key responsibilities of this job?",
+      "query_type": "BOTH",
+      "ground_truth": "Your project experience, particularly the AI Career Mentor, aligns remarkably well with the job's key responsibilities. The JD asks for someone to 'design, develop, and implement AI models' and 'deploy AI models to production environments.' Your project shows you've done exactly that by building an end-to-end RAG application. You've handled everything from vector search engineering with pgvector to deployment and monitoring with Docker, Azure, and Grafana. This is a powerful, practical example of you performing the core duties of the role."
+    },
+    {
+      "question": "Based on the job description's focus on building and deploying AI applications, what parts of my background make me a strong candidate?",
+      "query_type": "BOTH",
+      "ground_truth": "Your background makes you a very strong candidate because you have proven experience across the full application lifecycle. The job requires someone to 'build and optimize AI-driven applications' and 'integrate AI models into cloud-based environments.' Your skills in web deployment frameworks like FastAPI and Flask, combined with your practical use of Docker, Nginx, and Microsoft Azure with CI/CD, show that you don't just build models, you know how to get them into a production-ready state. This is a critical skill that many candidates lack."
+    },
+    {
+      "question": "Does my experience with LLMs and RAG systems give me a significant advantage for this position?",
+      "query_type": "BOTH",
+      "ground_truth": "Absolutely. Your deep experience with LLMs and RAG systems gives you a massive advantage. The job description explicitly mentions 'generative AI models' and building 'natural language processing (NLP)' applications. Your internship at Singularity, where you fine-tuned LLMs and built RAG systems, and your multiple personal projects like the 'Fitness Assistant' and 'AR-EN Sales Agent,' prove you have advanced, practical skills in this cutting-edge area. This isn't just theoretical knowledge; you've built and deployed these systems, which is exactly what modern AI engineering roles demand."
+    },
+    {
+      "question": "What are the biggest gaps in my skills compared to the required qualifications?",
+      "query_type": "BOTH",
+      "ground_truth": "Looking at the job description, the most noticeable gaps are in a few specific technologies they've listed. While your Python skill is excellent, the JD also mentions R or Java as alternatives, which aren't on your CV. More significantly, they list big data technologies like Hadoop and Spark as a 'plus,' and your CV doesn't show experience there. Finally, while your Azure experience is great, they are also looking for familiarity with other cloud platforms like AWS and GCP, which represents a potential area for growth."
+    },
+    {
+      "question": "The job description mentions MLOps tools and big data technologies like Spark. How much of a weakness is my lack of explicit experience here?",
+      "query_type": "BOTH",
+      "ground_truth": "It's a minor weakness but likely not a dealbreaker. The JD lists big data tech like Spark as a 'plus,' not a hard requirement, so its absence isn't critical. Regarding MLOps, while you don't list specific tools for model monitoring, your experience with CI/CD using GitHub Actions is a core component of MLOps and shows you understand automated workflows. You can frame this as a strong foundation you're eager to build upon with more specialized monitoring and retraining tools."
+    },
+    {
+      "question": "I see the job prefers experience with AI ethics and bias mitigation. Is this a major gap in my profile?",
+      "query_type": "BOTH",
+      "ground_truth": "This is a gap, but it's in the 'Preferred Qualifications' section, so it's not a primary requirement. While your CV doesn't explicitly mention experience with AI ethics or bias mitigation, it's an area you can address proactively. In an interview, you could discuss your awareness of these principles and how you would consider them when building models. It's a manageable gap, especially given how strongly your core technical skills align with their needs."
+    },
+    {
+      "question": "My cloud experience is primarily with Azure. How will my lack of AWS and GCP experience be viewed for this role?",
+      "query_type": "BOTH",
+      "ground_truth": "Your lack of direct AWS and GCP experience might be seen as a small gap, but it's easily overcome. The fact that you have solid experience deploying applications on a major cloud platform like Azure is the most important thing. You've demonstrated you understand cloud concepts, containerization with Docker, and CI/CD. Most companies know that these skills are highly transferable between cloud providers, so they will likely be confident in your ability to pick up AWS or GCP quickly."
+    },
+    {
+      "question": "How does my experience with Python, TensorFlow, and PyTorch align with the job's core programming requirements?",
+      "query_type": "BOTH",
+      "ground_truth": "Your experience with Python, TensorFlow, and PyTorch aligns perfectly with their core requirements. The job description lists proficiency in Python as a primary need and specifically calls out hands-on experience with machine learning frameworks like TensorFlow and PyTorch. Your skills section clearly lists all of these, and your projects and professional experience demonstrate that you've used them extensively to build and train a variety of deep learning models. This is a direct and complete match."
+    },
+    {
+      "question": "The role requires building NLP and computer vision applications. Can you show me how my background covers this?",
+      "query_type": "BOTH",
+      "ground_truth": "Certainly. Your background shows solid experience in both areas. For NLP, your internship at Singularity and your numerous projects involving RAG, fine-tuning, and sales agents are prime examples of building advanced NLP applications. For computer vision, your AI Trainee role at NTI explicitly mentions applying CNNs for computer vision tasks. This combination shows you have foundational and advanced skills across both domains required by the job."
+    },
+    {
+      "question": "How does my internship at Singularity, where I built RAG systems, match the responsibility of 'building and optimizing AI-driven applications'?",
+      "query_type": "BOTH",
+      "ground_truth": "Your internship at Singularity is a perfect match for that responsibility. Building a Retrieval-Augmented Generation (RAG) system is a textbook example of 'building an AI-driven application.' The description of your work, including fine-tuning LLMs for domain-specific tasks and optimizing inference performance, directly corresponds to the 'optimizing' part of the requirement. This experience shows you can take a complex AI concept and turn it into a functional, efficient application, which is exactly what they need."
+    },
+    {
+      "question": "The job asks for experience deploying AI models to production. How does my work with Docker, FastAPI, and Azure demonstrate this skill?",
+      "query_type": "BOTH",
+      "ground_truth": "Your work with Docker, FastAPI, and Azure is a powerful demonstration of your production deployment skills. The job requires deploying models to cloud environments, and your 'AI Career Mentor' project is a complete case study. You used FastAPI to create an API for your model, Docker to containerize the application for consistency, and Azure with GitHub Actions to automate the deployment. This shows you understand the entire modern stack for taking an AI model from your local machine to a live, scalable production environment."
+    },
+    {
+      "question": "What kind of projects or learning path should I follow to address my gap in big data technologies like Spark and Hadoop?",
+      "query_type": "BOTH",
+      "ground_truth": "A great way to address the gap in big data tech would be to start a personal project that requires processing a large dataset that won't fit into memory. You could find a public dataset on Kaggle or another source and use PySpark (the Python API for Spark) to perform data cleaning, feature engineering, and then train a machine learning model. This would give you practical, hands-on experience. Documenting this project on your GitHub would be a fantastic way to showcase your new skills to employers."
+    },
+    {
+      "question": "To become a stronger candidate, what's the best way for me to gain practical experience in MLOps and model monitoring?",
+      "query_type": "BOTH",
+      "ground_truth": "To build on your existing CI/CD experience, you could enhance one of your current projects, like the 'AI Career Mentor.' A great next step would be to integrate tools for monitoring and logging. You could use Prometheus to collect performance metrics from your FastAPI application and Grafana to create dashboards to visualize them. This would demonstrate your ability to not just deploy a model, but also to monitor its health and performance in a production-like setting, which is a key aspect of MLOps."
+    },
+    {
+      "question": "What steps can I take to demonstrate knowledge of AI ethics and bias mitigation, which is a preferred qualification?",
+      "query_type": "BOTH",
+      "ground_truth": "A practical step would be to take a short online course on AI ethics and fairness from a reputable platform. After that, you could apply what you've learned to one of your existing projects. For example, you could analyze the dataset used in your 'Fine_Tuning_Qwen2.5' project for potential biases and document your findings and any mitigation techniques you explored in the project's README file. This would provide concrete evidence of your commitment to responsible AI development."
+    },
+    {
+      "question": "Given my Azure experience, what's a practical roadmap to get up to speed with AWS and GCP for AI model deployment?",
+      "query_type": "BOTH",
+      "ground_truth": "A great roadmap would be to take one of your existing projects, like the 'Fitness Assistant' which is already containerized with Docker, and redeploy it on AWS and then GCP. For AWS, you could use a service like Amazon ECS or EKS. For GCP, you could use Google Kubernetes Engine or Cloud Run. By deploying the same application to different clouds, you'll quickly learn the equivalent services and nuances of each platform, and you can add 'AWS' and 'GCP' to your skills list with confidence."
+    },
+    {
+      "question": "Can you score my overall fit for this AI Engineer position on a scale of 0-100 and explain the reasoning?",
+      "query_type": "BOTH",
+      "ground_truth": "I would score your overall fit for this AI Engineer position at a very strong 85 out of 100. You are an excellent match for the core responsibilities. Your hands-on experience building and deploying RAG systems and fine-tuning LLMs, as shown in your projects and internship, aligns perfectly with their need to 'design, develop, and deploy AI-driven solutions.' You meet all the primary technical requirements, including Python and key frameworks. The score isn't higher only because of minor gaps in the 'preferred' and 'plus' categories, like experience with big data tools like Spark, broader cloud knowledge beyond Azure, and explicit work in AI ethics. These are secondary to your strong alignment with the fundamental duties of the role."
+    },
+    {
+      "question": "Please assess my hands-on project experience against the job's responsibilities and provide a score with a breakdown.",
+      "query_type": "BOTH",
+      "ground_truth": "I'd score your hands-on project experience at a 95 out of 100 against this job's responsibilities. Your projects are your strongest asset. You have multiple, complex, end-to-end projects like the 'AI Career Mentor' and 'AR-EN Sales Agent' that directly demonstrate your ability to 'design, develop, and implement AI models' and 'deploy AI models to production.' You've used modern tools like RAG, LLMs, Docker, and Azure, which are highly relevant. The only reason it's not a perfect 100 is that the projects don't explicitly touch on every single preferred area, such as edge AI or robotics, but they cover the core requirements exceptionally well."
+    },
+    {
+      "question": "Score my technical skills (programming, frameworks, cloud) against the required and preferred qualifications, and tell me why you gave that score.",
+      "query_type": "BOTH",
+      "ground_truth": "I would score your technical skills at an 80 out of 100. You get full marks on the most critical required skills: you are proficient in Python and have hands-on experience with the exact frameworks they list\u2014TensorFlow, PyTorch, and Scikit-learn. Your skills in modern AI tools like LangChain and Hugging Face are a major plus. The score is moderated slightly because your cloud experience is specific to Azure, whereas they list all three major platforms, and you lack experience in the 'plus' category of big data technologies like Spark and Hadoop. However, your foundation is incredibly solid."
+    },
+    {
+      "question": "Based on my education and professional experience alone, how well do I match the profile they're looking for? Give me a score and a brief explanation.",
+      "query_type": "BOTH",
+      "ground_truth": "Based on your education and professional experience, I'd give you a score of 90 out of 100. Your education, with a B.Sc. in a relevant field and an in-progress M.Sc. in Data Science, perfectly meets their qualifications. Your professional experience is even stronger. Your AI Engineer Internship at Singularity and your AI Instructor roles show a clear progression and deep, practical involvement in building and teaching the very technologies they use, like LLMs, RAG, and deep learning. This combination of strong academics and highly relevant, recent work experience makes you a near-perfect match."
+    }
+  ]
+}

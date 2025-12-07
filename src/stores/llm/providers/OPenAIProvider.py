@@ -39,7 +39,7 @@ class OpenAIProvider(LLMInterface):
         self.embedding_size=embedding_size
 
 
-    def generate_text(self,prompt:str,chat_history:list=[],max_output_tokens:int =None,temprature:float=None):
+    def generate(self,prompt:str,chat_history:list=[],max_output_tokens:int =None,temprature:float=None,**kwargs):
         
         if self.client is None:
             self.logger.error(' client was not set')

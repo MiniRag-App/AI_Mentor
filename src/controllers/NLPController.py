@@ -14,29 +14,6 @@ class NLPController(BaseController):
         self.vectordb_client =vectordb_client
         self.template_parser =template_parser
 
-    def classify_question(self,query: str) -> str:
-        question_lower = query.lower()
-
-        # Priority 1: Comparison (needs both)
-        comparison_keywords = ['missing', 'lack', 'gap', 'match', 'score','imporve' 
-                            'compare', 'qualify', 'fit', 'rate', 'eligible']
-        if any(keyword in question_lower for keyword in comparison_keywords):
-            return QueryEnum.BOTH.value
-        
-        # Priority 2: Self-reference (CV only)
-        self_keywords = ['my ', 'i have', 'i worked', 'i studied', 'me ']
-        if any(keyword in question_lower for keyword in self_keywords):
-            return QueryEnum.CV.value
-        
-        # Priority 3: Job-reference (JD only)
-        job_keywords = ['required', 'requirement', 'they want', 'job needs',
-                    'looking for', 'responsibilities', 'duties', 'must have']
-        if any(keyword in question_lower for keyword in job_keywords):
-            return QueryEnum.JD.value
-        
-        # Default: General (both, let vectors decide)
-        return QueryEnum.BOTH.value
-
     def create_collection_name(self ,project_id:int):
         return f"collection_{self.vectordb_client.default_vector_size}_{project_id}".strip()
     
@@ -63,9 +40,9 @@ class NLPController(BaseController):
         collection_name = self.create_collection_name(project_id=project.project_id)
 
         # step2: manage items
-        texts = [ c.chunk_text for c in chunks ]
+        querys = [ c.chunk_text for c in chunks ]
         metadata = [ c.chunk_metadata for c in  chunks]
-        vectors = self.embedding_client.embed_text(text=texts, document_type=DocumentTypeEnum.DOCUMENT.value)
+        vectors = self.embedding_client.embed_text(text=querys, document_type=DocumentTypeEnum.DOCUMENT.value)
            
 
         # step3: create collection if not exists
@@ -77,7 +54,7 @@ class NLPController(BaseController):
         # step4: insert into vector db
         _ = await self.vectordb_client.insert_many(
             collection_name=collection_name,
-            texts=texts,
+            texts=querys,
             metadata=metadata,
             vectors=vectors,
             record_ids=chunks_ids
@@ -86,18 +63,15 @@ class NLPController(BaseController):
         return True
     
     async def search_vectordb_collection(self,project:Project ,query:str, limit:int):
-        # step:get query type
-        query_type =self.classify_question(query)
-         
-        # step2: get collection name 
+        # step1: get collection name 
         collection_name =self.create_collection_name(project_id=project.project_id)
 
 
-        # step2: get embedding vector for text
+        # step2: get embedding vector for query
         query_vector =None 
 
         vectors =self.embedding_client.embed_text(
-            text =query ,
+            text=query ,
             document_type=DocumentTypeEnum.QUERY.value
         )
 
@@ -116,8 +90,7 @@ class NLPController(BaseController):
         result = await self.vectordb_client.search_by_vector(
              collection_name = collection_name,
              vector = query_vector, 
-             limit =limit,
-             query_type =query_type
+             limit =limit
         )
 
         if not result:
@@ -131,55 +104,64 @@ class NLPController(BaseController):
         return result
     
 
-    async def answer_rag_question(self, project: Project, query: str, job_desc: str, limit: int = 10):
-
+    async def answer_rag_question(self, project: Project, query: str, limit: int = 10, top_n_per_type: int = 2):
         print("[DEBUG] Step 1: Retrieving relevant documents...")
-        retrieved_documents = await self.search_vectordb_collection(project=project, text=query, limit=limit)
+        retrieved_documents = await self.search_vectordb_collection(project=project, query=query, limit=limit)
         print(f"[DEBUG] Retrieved {len(retrieved_documents) if retrieved_documents else 0} documents.")
 
-        if not retrieved_documents or len(retrieved_documents) == 0:
+        if not retrieved_documents:
             print("[DEBUG] No documents retrieved. Returning None.")
             return None
 
-        print("[DEBUG] Step 2: Constructing system prompt...")
-        system_prompt = self.template_parser.get_prompt_value(group='rag', key='system_prompt')
+        # Step 2: Separate CV and Job chunks
+        cv_chunks = [doc for doc in retrieved_documents if doc.doc_type == QueryEnum.CV.value][:top_n_per_type]
+        job_chunks = [doc for doc in retrieved_documents if doc.doc_type == QueryEnum.JD.value][:top_n_per_type]
 
-        print("[DEBUG] Step 3: Constructing document prompts...")
-        document_prompts = "\n".join([
-            self.template_parser.get_prompt_value(
-                group='rag',
-                key='Document_prompt',
-                vars={
-                    "doc_num": idx,
-                    "chunk_text": self.generation_client.proecess_text(doc.text)
-                }
+        print(f"[DEBUG] Top {len(cv_chunks)} CV chunks, Top {len(job_chunks)} Job chunks selected.")
+
+        # Step 3: Construct system prompt
+        system_prompt_query = self.template_parser.get_prompt_value(group='rag', key='system_prompt')
+
+        # Step 4: Construct Document prompts for CV and Job together
+        document_prompts_list = []
+
+        for idx, doc in enumerate(cv_chunks + job_chunks):
+            document_prompts_list.append(
+                self.template_parser.get_prompt_value(
+                    group='rag',
+                    key='Document_prompt',
+                    vars={
+                        "doc_num": idx + 1,
+                        "doc_type": doc.doc_type,
+                        "chunk_text": self.generation_client.proecess_text(doc.text)
+                    }
+                )
             )
-            for idx, doc in enumerate(retrieved_documents)
-        ])
 
-        print("[DEBUG] Step 4: Constructing Job Description prompt...")
-        jobdesc_prompt = self.template_parser.get_prompt_value(
+        document_prompts = "\n".join(document_prompts_list)
+        print(f"[DEBUG] Document prompts constructed with {len(document_prompts_list)} chunks.")
+
+        # Step 5: Construct Footer prompt
+        footer_prompt = self.template_parser.get_prompt_value(
             group='rag',
-            key='JobDesc_prompt',
-            vars={"job_description": job_desc}
+            key='Footer_prompt',
+            vars={"query": query}
         )
 
-        print("[DEBUG] Step 5: Constructing footer prompt...")
-        footer_prompt = self.template_parser.get_prompt_value(group='rag', key='Footer_prompt', vars={"query": query})
-
-        print("[DEBUG] Step 6: Constructing chat history...")
+        # Step 6: Construct chat history
         chat_history = [
             self.generation_client.consturct_prompt(
-                prompt=system_prompt,
+                prompt=system_prompt_query,
                 role=self.generation_client.enums.SYSTEM.value
             )
         ]
 
-        print("[DEBUG] Step 7: Constructing full prompt...")
-        full_prompt = '\n\n'.join([document_prompts, jobdesc_prompt, footer_prompt])
+        # Step 7: Combine full prompt
+        full_prompt = '\n\n'.join([document_prompts, footer_prompt])
+        print("[DEBUG] Full prompt constructed. Length:", len(full_prompt))
 
-        print("[DEBUG] Step 8: Calling LLM generate_text...")
-        answer = self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_history)
-        print("[DEBUG] Step 9: LLM response received.")
+        # Step 8: Call LLM
+        answer = self.generation_client.generate(prompt=full_prompt, chat_history=chat_history)
+        print("[DEBUG] LLM response received.")
 
-        return answer, full_prompt, chat_history
+        return answer, full_prompt, chat_history,retrieved_documents

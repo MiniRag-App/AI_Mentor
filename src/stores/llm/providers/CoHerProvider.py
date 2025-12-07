@@ -37,7 +37,7 @@ class CoHerProvider(LLMInterface):
         self.embedding_size=embedding_size
 
 
-    def generate_text(self, prompt, chat_history:list=[], max_output_tokens:int = None, temprature:int = None):
+    def generate(self, prompt, chat_history:list=[], max_output_tokens:int = None, temprature:int = None):
         
         if self.client is None:
             self.logger.error('CoHer client was not set')

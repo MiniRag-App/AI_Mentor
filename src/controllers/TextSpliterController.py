@@ -11,7 +11,7 @@ class TextSpliterController(BaseController):
         # Common CV section headers (regex patterns)
         self.cv_section_pattern = {
             'summary': r'(professional\s+summary|summary|profile|objective|about\s+me)',
-            'experience': r'(work\s+experience|professional\s+experience|employment\s+history|experience)',
+            'experience': r'^(work\s+experience|professional\s+experience|employment\s+history|experience)$',
             'education': r'(education|academic\s+background|qualifications)',
             'skills': r'(skills|technical\s+skills|core\s+competencies|expertise)',
             'projects': r'(projects|key\s+projects|notable\s+projects)',
@@ -21,15 +21,14 @@ class TextSpliterController(BaseController):
             'contact': r'(contact|personal\s+information|details)'
         }
         
-        self.JD_section_pattern ={
-            'title_overview': r'(job\s+title|position|role|overview|about\s+the\s+role|about\s+the\s+job)',
-            'responsibilities': r'(responsibilities|duties|what\s+you\s+will\s+do|your\s+role)',
-            'requirements': r'(requirements|qualifications|what\s+we\s+need|must\s+have)',
-            'preferred': r'(preferred|nice\s+to\s+have|bonus|plus)',
-            'benefits': r'(benefits|what\s+we\s+offer|perks|compensation)',
-            'company': r'(about\s+us|company|our\s+culture|who\s+we\s+are)',
-            'technical': r'(technical\s+requirements|tech\s+stack|tools|technologies)'
+        self.JD_section_pattern = {
+        'summary': r'^(job\s+summary|about\s+the\s+job|role\s+overview)$',
+        'responsibilities': r'^(key\s+responsibilities|responsibilities|duties)$',
+        'requirements': r'^(required\s+skills\s*&\s*qualifications|requirements|qualifications)$',
+        'preferred': r'^(preferred\s+qualifications|preferred|nice\s+to\s+have)$',
+        'company': r'^(about\s+us|company|who\s+we\s+are)$',
         }
+
         
         self.doc_type =doc_type
         self.section_pattern =self.cv_section_pattern if self.doc_type == QueryEnum.CV.value else self.JD_section_pattern
@@ -44,24 +43,12 @@ class TextSpliterController(BaseController):
           # setp2: define sections 
         sections ={}
         
-        first_header_idx =0
-        # search for personal info in it was cv
-        if self.doc_type == QueryEnum.CV.value:
-            for idx , line in enumerate(lines):
-                if any(re.search(pattern,line.lower(),re.IGNORECASE) for pattern in self.section_pattern.values()):
-                    first_header_idx =idx
-                    break
-            
-            if first_header_idx > 0:
-                personal_info =' '.join(lines[:first_header_idx]).strip()
-                print(personal_info)
-                sections['contacts'] =personal_info
-      
+           
         # step3: define current section 
         current_section ='unknown'
         sections['unknown'] =[]
         # loop for each line and compare it with regex 
-        for line in lines[first_header_idx:]:
+        for line in lines:
             lower_line =line.lower().strip()  
             
             # seach for regex in lin 
@@ -69,10 +56,10 @@ class TextSpliterController(BaseController):
             
             for section_name ,pattern in self.section_pattern.items():
                 # check if the line is a header
-                if re.search(pattern,lower_line,re.IGNORECASE):
+                if re.fullmatch(pattern,lower_line,re.IGNORECASE):
                     current_section = section_name
                     
-                    sections[current_section] =[]
+                    sections.setdefault(current_section, [])
                     section_found =True
                     break
                     
@@ -91,7 +78,6 @@ class TextSpliterController(BaseController):
         
         chunks =[
                 DataChunk(
-                    Chunk_section_type =section_name,
                     chunk_text=section_text,
                     chunk_metadata =[],
                     chunk_order= idx,

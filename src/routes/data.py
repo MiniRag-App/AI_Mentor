@@ -92,8 +92,8 @@ async def upload_data(request:Request,project_id:int,file:UploadFile,doc_type:st
 
 @data_router.post('/process/{project_id}')
 async def process_endpoint(request:Request,project_id:int,process_request:ProcessRequest):
-       # chunk_size =process_request.chunk_size
-       # overlap =process_request.overlap
+       chunk_size =process_request.chunk_size
+       overlap =process_request.overlap
        do_reset =process_request.do_reset
 
        project_model =await ProjectDataModel.create_instance(
@@ -183,10 +183,11 @@ async def process_endpoint(request:Request,project_id:int,process_request:Proces
                      continue
               
               file_chunks =process_controller.get_file_chunks(
-                     file_content =file_content,
-                     project_id=project_id,
-                     asset_id=asset_id,
-                     doc_type =doc_type
+                            file_content =file_content,
+                            asset_id=asset_id,
+                            doc_type =doc_type,
+                            overlap_size=overlap,
+                            chunk_size=chunk_size
                      )
               
               if file_chunks is None or len(file_chunks) ==0:

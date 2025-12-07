@@ -173,7 +173,7 @@ async def search_index(request:Request ,project_id:int ,search_request:SearchReq
 @nlp_router.post("/index/answer/{project_id}")
 async def answer_rag(request:Request ,project_id:int ,search_request:SearchRequest):
 
-    logger.info("[DEBUG] Received request for answer endpoint with project_id=%s, text=%s", project_id, search_request.text)
+    logger.info("[DEBUG] Received request for answer endpoint with project_id=%s, text=%s", project_id, search_request.query)
 
     project_model = await ProjectDataModel.create_instance(
         db_client=request.app.db_client
@@ -194,10 +194,9 @@ async def answer_rag(request:Request ,project_id:int ,search_request:SearchReque
     logger.info("[DEBUG] NLPController initialized.")
 
     try:
-        answer, full_prompt, chat_histoy = await nlp_controller.answer_rag_question(
+        answer, full_prompt, chat_histoy,context = await nlp_controller.answer_rag_question(
             project=project,
-            query=search_request.text,
-            job_desc =search_request.job_desc,
+            query=search_request.query,
             limit=search_request.limit
         )
         logger.info("[DEBUG] answer_rag_question completed.")

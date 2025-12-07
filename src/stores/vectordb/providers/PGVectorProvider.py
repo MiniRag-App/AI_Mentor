@@ -268,7 +268,7 @@ class PGVectorProvider( VecotrDBInterface):
 
         return True
     
-    async def search_by_vector(self, collection_name: str, vector: list, limit: int,query_type:str):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int=10):
 
         is_collection_existed = await self.is_collection_existed(collection_name=collection_name)
         if not is_collection_existed:
@@ -278,30 +278,17 @@ class PGVectorProvider( VecotrDBInterface):
         vector = "[" + ",".join([ str(v) for v in vector ]) + "]"
         async with self.db_client() as session:
             async with session.begin():
-                # BUILD QUERY BASED ON query_type
-                if query_type == QueryEnum.CV.value :
-                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
-                                        f' FROM {collection_name} '
-                                        'join chunks as ch '
-                                        f'on ch.chunk_id = {collection_name}.chunk_id '
-                                        f"where ch.chunk_doc_type ='{QueryEnum.CV.value}'"
-                                        ' ORDER BY score DESC '
-                                        f'LIMIT {limit}'
-                                        )
-                elif query_type ==QueryEnum.JD.value:
-                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
-                                        f' FROM {collection_name} '
-                                        'join chunks as ch '
-                                        f'on ch.chunk_id = {collection_name}.chunk_id '
-                                        f"where ch.chunk_doc_type ='{QueryEnum.JD.value}'"
-                                        ' ORDER BY score DESC '
-                                        f'LIMIT {limit}'
-                                        )
-                else:
-                    search_sql = sql_text(f'SELECT {PgVectorTableSchemeEnums.TEXT.value} as text, 1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score'
-                                        f' FROM {collection_name} '
-                                        ' ORDER BY score DESC '
-                                        f'LIMIT {limit}'
+                
+                search_sql = sql_text(f'''
+                                        SELECT cln.{PgVectorTableSchemeEnums.TEXT.value} as text,
+                                            ch.chunk_doc_type as doc_type,
+                                            1 - ({PgVectorTableSchemeEnums.VECTOR.value} <=> :vector) as score
+                                        FROM {collection_name} as cln 
+                                        join chunks as ch 
+                                            on ch.chunk_id = cln.chunk_id
+                                        ORDER BY score DESC 
+                                        LIMIT {limit}
+                                        '''
                                         )
                 result = await session.execute(search_sql, {"vector": vector})
 
@@ -310,7 +297,8 @@ class PGVectorProvider( VecotrDBInterface):
                 return [
                     RetrievedDocument(
                         text=record.text,
-                        score=record.score
+                        score=record.score,
+                        doc_type=record.doc_type
                     )
                     for record in records
                 ]
