@@ -1,8 +1,8 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
 python-multipart==0.0.20
-python-dotenv==1.1.0
-pydantic-settings==2.9.1
+python-dotenv==1.2.1
+pydantic-settings==2.12.0
 aiofiles==24.1.0 # for handling local disk files in asyncio applications
 langchain==0.3.25
 PyMuPDF==1.26.0
@@ -12,7 +12,7 @@ motor==3.7.1
 groq==0.29.0
 cohere==5.16.1
 qdrant-client==1.15.1
-openai==1.109.1
+openai==2.9.0
 SQLAlchemy==2.0.43
 asyncpg==0.30.0
 alembic==1.16.5 
@@ -30,5 +30,10 @@ fastapi-health==0.4.0
 
 # Rag Evaluation 
 ragas==0.4.0
+deepeval==3.7.4
+protobuf==4.25.3
+google-genai==1.53.0
+google==3.0.0
+
 json-repair==0.54.2
 

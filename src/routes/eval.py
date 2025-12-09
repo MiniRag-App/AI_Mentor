@@ -1,7 +1,6 @@
 from fastapi import FastAPI ,APIRouter,Depends,Request
-from helpers.config import get_settings,Settings
 from models.ProjectDataModel import ProjectDataModel
-from evaluation.metrics import EvaluationMetrics
+from evaluation.DeepEvalRAGEvaluator import DeepEvalRAGEvaluator
 from controllers.NLPController import NLPController
 
 eval_router =APIRouter(
@@ -23,15 +22,7 @@ async def evaluation_rag_system(request:Request,project_id:int):
                      embedding_client=request.app.embedding_client,
                      template_parser =request.app.template_parser
     )
-    evalutaion_metrics =EvaluationMetrics(nlp_controller=nlp_controller,
-                                          generation_client=request.app.generation_client,
-                                          embedding_client=request.app.embedding_client)
+    deep_eval =DeepEvalRAGEvaluator(nlp_controller=nlp_controller)
+    results = await deep_eval.run_evaluation(project=project)
     
-    evaluation_result =await evalutaion_metrics.ragas_evaluation(project=project)
-    
-    return {
-        " Faithfulness:":evaluation_result['faithfulness'],
-        "Answer Relevancy:": evaluation_result['answer_relevancy'],
-        "Context Precision:":evaluation_result['context_precision'],
-        "Context Recall:":evaluation_result['context_recall']
-        }
+    return results

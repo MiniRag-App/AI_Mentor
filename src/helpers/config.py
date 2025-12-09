@@ -24,9 +24,10 @@ class Settings(BaseSettings):
     COHER_API_KEY:str =None
     GROQ_API_KEY :str =None
     Gemini_API_KEY:str=None
-
+    BASE_URL_GROQ:str =None
     OPENAI_BASE_URL_LITERAL :Optional[List[str]] = None
     OPENAI_BASE_URL:str= None
+    BASE_URL_GEMINI:str=None
 
     GENERATION_MODEL_ID_LITERAL :list = None
 
