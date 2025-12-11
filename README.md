@@ -1,40 +1,63 @@
-# min_rag
-this is a minimal implementaion of the RAG model for question
-answering 
+# AI Mentor
 
-## requirments
-- python 3.8 or later
+AI Mentor is a minimal Retrieval-Augmented Generation (RAG) application that provides context-aware question answering and guidance using a small, easy-to-run FastAPI service.
+ 
+## Requirements
+- Python 3.8+
+- Recommended: use a virtual environment (conda or venv)
 
-#### Install python using minicodna
-1) Download and install MIniconda from [her](https://www.anaconda.com/docs/getting-started/miniconda/main)
-2) Create new enviroment using the following command:
+## Installation (conda)
+1. Create and activate environment:
 ```bash
-$ conda create -n min-rag-app python=3.8
+conda create -n ai-mentor python=3.8 -y
+conda activate ai-mentor
 ```
-3) Activate enviroment using the following command:
+2. Install dependencies:
 ```bash
-$ conda activate min-rag-app
-```
-
-### (optinal) setup your command line interface for better readability
-```bash
-export PS1="\[\033[01;32m\]\u@\h:\w\n\[\033[00m\]\$ "
+pip install -r requirements.txt
 ```
 
-### Install required pakages
+## Environment
+1. Copy the example env file:
 ```bash
-$ pip install -r requirments.txt
+cp .env.example .env
 ```
-### Setup enviroment variables
-```bash
-$ cp .env.example .env
-```
-set your enviroment variables in the .env file like GROQ_API_KEY value
+2. Edit `.env` and set required keys (API keys, model/config flags).
 
-#### Run the fastapi server
+## Run the server
+Start the FastAPI server locally:
 ```bash
-$ uvicorn main:app --reload --host 0.0.0.0 --port 5000
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
 
-### Postman Collection
-Download the postman collection from [/assests/Min_rag.postman_collection.josn](/assests/Min_rag.postman_collection.josn)
+ 
+
+## Project structure (actual)
+```
+src/
+├── __pycache__/                  # Python cache files
+├── .deepeval/                    # DeepEval cache and evaluation state
+├── assets/                       # Static files, examples, Postman collections
+├── controllers/                  # Request handlers and business logic controllers
+├── evaluation/                   # Evaluation scripts and DeepEval configs
+├── helpers/                      # Utility helper functions
+├── models/                       # Data models and Pydantic schemas
+├── routes/                       # FastAPI route definitions and endpoints
+├── stores/                       # External service integrations
+│   ├── llm/                      # Ollama LLM service wrapper
+│   └── vectordb/                 # Vector database (FAISS, etc.) wrapper
+├── utils/                        # Common utilities (text processing, I/O, logging)
+│   └── __init__.py
+├── __init__.py                   # Package initialization
+├── .env                          # Local environment variables (git ignored)
+├── .env.example                  # Example env template
+├── .gitignore
+├── main.py                       # FastAPI app entry point
+├── requirements.txt              # Python dependencies
+├── evaluation_dataset.json       # Benchmark QA dataset
+└── README.md                     # Application README
+```
+ 
+ 
+
+ 

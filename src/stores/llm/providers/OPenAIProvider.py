@@ -8,7 +8,7 @@ class OpenAIProvider(LLMInterface):
     def __init__(self, api_key:str,base_url:str,
                  default_input_max_characters:int = 1000,
                  default_generation_max_output_tokens:int =1000,
-                 default_generation_temprature: float= 0.1):
+                 default_generation_temprature: float= 0.0):
               
         self.api_key=api_key
         self.base_url =base_url
@@ -39,7 +39,7 @@ class OpenAIProvider(LLMInterface):
         self.embedding_size=embedding_size
 
 
-    def generate(self,prompt:str,chat_history:list=[],max_output_tokens:int =None,temprature:float=None,**kwargs):
+    def generate(self,prompt:str,chat_history:list=[],max_output_tokens:int =None,temprature:float=0.0):
         
         if self.client is None:
             self.logger.error(' client was not set')

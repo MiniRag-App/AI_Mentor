@@ -19,7 +19,7 @@ from deepeval.models import OllamaModel
 from helpers.config import Settings
 
 logger = logging.getLogger(__name__)
-os.environ["DEEPEVAL_PER_ATTEMPT_TIMEOUT_SECONDS_OVERRIDE"] = "600"
+os.environ["DEEPEVAL_PER_ATTEMPT_TIMEOUT_SECONDS_OVERRIDE"] = "4000"
 
 
 class DeepEvalRAGEvaluator:
@@ -112,7 +112,7 @@ class DeepEvalRAGEvaluator:
     # -----------------------------------------------------
     # Run DeepEval evaluation
     # -----------------------------------------------------
-    async def run_evaluation(self, project, num_questions=5):
+    async def run_evaluation(self, project, num_questions=10):
         self.load_evaluation_data()
 
         test_cases = await self.construct_test_cases(project, num_questions)
@@ -132,41 +132,10 @@ class DeepEvalRAGEvaluator:
                     max_concurrent=1)
                 )
 
-            return  self.extract_metric_scores(evaluation_results["test_results"])
+            return evaluation_results
 
         except Exception as e:
             logger.error(f"DeepEval evaluation failed: {e}")
             return {"error": str(e)}
 
-    # -----------------------------------------------------
-    # Extract ONLY average metric scores using evaluation_results
-    # -----------------------------------------------------
-    def extract_metric_scores(test_results):
-        """
-        Extract only metric name, threshold, and score.
-        
-        Args:
-            test_results (list): The "test_results" list from evaluation_results
-        
-        Returns:
-            list: Clean list with metric name, threshold, score
-        """
-        
-        cleaned_results = []
-
-        for test_case in test_results:
-            metrics_list = []
-            
-            for metric in test_case.get("metrics_data", []):
-                metrics_list.append({
-                    "name": metric.get("name"),
-                    "threshold": metric.get("threshold"),
-                    "score": metric.get("score")
-                })
-            
-            cleaned_results.append({
-                "test_case": test_case.get("name"),
-                "metrics": metrics_list
-            })
-        
-        return cleaned_results
+    
